@@ -29,8 +29,8 @@ A clean, information-dense enterprise design system defined by central tokens in
 
 ### Publish the demo / نشر العرض
 1. Push this repository to GitHub. / ارفع المستودع إلى GitHub.
-2. **Settings → Pages → Source: GitHub Actions**.
-3. Push to `main`; the workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes `demo/`. / عند الرفع إلى `main` يُنشر مجلد `demo/` تلقائياً.
+2. The workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) copies `demo/` to the `gh-pages` branch on every push to `main` (or run it manually from **Actions → Publish demo → Run workflow**). / يُنسخ مجلد `demo/` تلقائياً إلى فرع `gh-pages`.
+3. **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)` → Save** (one time). / مرة واحدة فقط.
 
 To run locally, open `demo/index.html` in a browser. / للتشغيل محلياً افتح `demo/index.html` في المتصفح.
 
