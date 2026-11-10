@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const D = window.HRDATA;
-  const STORE_KEY = 'hrmo-demo-v1';
+  const STORE_KEY = 'hrmo-demo-v2';
   const DEFAULT_POLICY = JSON.parse(JSON.stringify(D.POLICY));
 
   // ======================================================================
@@ -24,6 +24,8 @@
     timesheet: null,
     readActivity: []
   };
+  // Extension layer: feature modules (assets/modules/*.js) register views, actions, overlays and hooks here.
+  const EXT = { state: {}, saved: {}, actions: {}, overlays: {}, onChange: [], onInput: [], apTypes: {}, onDecide: [], homeBanners: [], empSections: [], empFooter: [], hrDash: [], cdDash: [], topbar: [], badge: {} };
   const empById = new Map(D.employees.map((e) => [e.id, e]));
   const me = () => empById.get(D.personas.EMPLOYEE);
   const persona = () => empById.get(D.personas[S.role]);
@@ -33,7 +35,7 @@
       localStorage.setItem(STORE_KEY, JSON.stringify({
         role: S.role, lang: S.lang, theme: S.theme, view: S.view, collapsed: S.collapsed,
         leaveRequests: D.leaveRequests, approvals: D.approvals, candidates: D.candidates, activity: D.activity,
-        policy: D.POLICY, timesheet: S.timesheet, readActivity: S.readActivity,
+        policy: D.POLICY, timesheet: S.timesheet, readActivity: S.readActivity, ext: EXT.state,
         me: { ackMissing: me().ackMissing, leave: me().leave }
       }));
     } catch (e) { /* storage unavailable: demo keeps working in memory */ }
@@ -54,6 +56,7 @@
     if (saved.timesheet) S.timesheet = saved.timesheet;
     if (saved.readActivity) S.readActivity = saved.readActivity;
     if (saved.me) Object.assign(me(), saved.me);
+    EXT.saved = saved.ext || {};
   }
   function resetDemo() {
     try { localStorage.removeItem(STORE_KEY); } catch (e) { /* ignore */ }
@@ -283,6 +286,7 @@
     el.className = `toast ${kind}`;
     el.innerHTML = `${icon(kind === 'bad' ? 'warn' : 'check', 16)}<span>${esc(text)}</span>`;
     host.appendChild(el);
+    while (host.children.length > 3) host.firstElementChild.remove();
     setTimeout(() => el.remove(), 3600);
   }
   function addActivity(role, ch, ar, en, go) {
@@ -319,6 +323,7 @@
   function pendingBadge() {
     if (S.role === 'CD') return D.approvals.filter((a) => a.status === 'PENDING').length;
     if (S.role === 'HR') return D.leaveRequests.filter((r) => r.status === 'PENDING_HR').length;
+    if (EXT.badge[S.role]) return EXT.badge[S.role]();
     return 0;
   }
   function findNav(v) {
@@ -360,7 +365,7 @@
       <button class="iconbtn hide-md" data-act="collapse" aria-label="${esc(L('طي القائمة الجانبية', 'Collapse sidebar'))}" data-tip="${esc(esc(S.collapsed ? L('توسيع القائمة', 'Expand menu') : L('طي القائمة', 'Collapse menu')))}">${icon('panel')}</button>
       <div class="brand"><span class="logo" aria-hidden="true">HM</span><span>HRMO</span></div>
       <button class="ws-switch" data-act="menu-ws" aria-haspopup="menu" title="${esc(L('تبديل مساحة العمل', 'Switch workspace'))}">${icon(S.role === 'CD' ? 'chart' : S.role === 'HR' ? 'people' : 'person', 14)}<span class="wl">${esc(roleLabel(S.role))}</span>${icon('down', 12)}</button>
-      <span class="demo-pill">${esc(L('بيانات تجريبية', 'Demo data'))}</span>
+      <span class="demo-pill">${esc(L('بيانات تجريبية', 'Demo data'))}</span>${EXT.topbar.map((fn) => fn()).join('')}
       <label class="search">${icon('search', 16)}<span class="sr-only">${esc(L('بحث', 'Search'))}</span><input type="search" id="gsearch" placeholder="${esc(L('ابحث عن موظف أو رقم وظيفي…', 'Search employees or staff numbers…'))}" data-act="global-search"><kbd>/</kbd></label>
       <div class="tools">
         <button class="iconbtn" data-act="activity" aria-label="${esc(L('الإشعارات', 'Notifications'))}" data-tip="${esc(esc(L('الإشعارات', 'Notifications')))}">${icon('bell')}${n ? `<span class="count">${n}</span>` : ''}</button>
@@ -405,7 +410,7 @@
   }
   function rowMenu(id) {
     const e = empById.get(id);
-    return `<div class="menu-label">${esc(T(e.name.short))}</div>${mItem('emp', 'person', L('فتح الملف', 'Open profile'), `data-id="${id}"`)}${mItem('toast', 'doc', L('تغيير حالة', 'Change of status'), `data-msg="${esc(L('أُنشئ تغيير حالة جديد (مسودة).', 'New change of status created (draft).'))}"`)}${mItem('toast', 'doc', L('إصدار شهادة خبرة', 'Issue employment certificate'), `data-msg="${esc(L('أُنشئت شهادة الخبرة من القالب.', 'Employment certificate generated from template.'))}"`)}${mItem('toast', 'teams', L('مراسلة عبر Teams', 'Message in Teams'), `data-msg="${esc(L('فُتحت محادثة Teams مع الموظف.', 'Teams chat opened with the employee.'))}"`)}`;
+    return `<div class="menu-label">${esc(T(e.name.short))}</div>${mItem('emp', 'person', L('فتح الملف', 'Open profile'), `data-id="${id}"`)}${mItem('cos-new', 'doc', L('تغيير حالة', 'Change of status'), `data-id="${id}"`)}${mItem('toast', 'doc', L('إصدار شهادة خبرة', 'Issue employment certificate'), `data-msg="${esc(L('أُنشئت شهادة الخبرة من القالب.', 'Employment certificate generated from template.'))}"`)}${mItem('toast', 'teams', L('مراسلة عبر Teams', 'Message in Teams'), `data-msg="${esc(L('فُتحت محادثة Teams مع الموظف.', 'Teams chat opened with the employee.'))}"`)}`;
   }
   function emptyState(ic, title, text, action) {
     return `<div class="empty-state"><span class="ei">${icon(ic, 22)}</span><b>${esc(title)}</b>${text ? `<span class="subtle">${esc(text)}</span>` : ''}${action || ''}</div>`;
@@ -440,6 +445,7 @@
     return `
       <div class="page-head"><div><h1>${esc(L(`مرحباً ${e.name.ar.split(' ')[0]}`, `Welcome, ${e.name.en.split(' ')[0]}`))}</h1><p>${esc(`${T(e.position)} · ${T(e.deptName)} · ${officeName(e.office)}`)}</p></div>
         <div class="btn-row"><button class="btn primary" data-act="nav" data-v="leave">${icon('cal', 16)}${esc(L('طلب إجازة', 'Request leave'))}</button></div></div>
+      ${EXT.homeBanners.map((fn) => fn()).join('')}
       <div class="grid g-4 keep2">
         ${tile(L('الإجازة السنوية المتاحة', 'Annual leave available'), `${fmtN(b.annual.available, 2)}`, L(`من ${fmtN(b.annual.accrued, 2)} مستحقة هذا العام`, `of ${fmtN(b.annual.accrued, 2)} accrued this year`), 'nav-leave', 'cal')}
         ${tile(L('المرضية براتب كامل', 'Sick leave (full pay)'), fmtN(b.sick.full), L(`+ ${b.sick.half} بنصف راتب`, `+ ${b.sick.half} at half pay`), 'nav-leave', 'cal')}
@@ -565,7 +571,7 @@
           <div class="table-wrap"><table><tbody>
             <tr><td>${esc(L('الراتب الأساسي', 'Base salary'))}</td><td class="num" style="text-align:end">${money(e.baseSalary)}</td></tr>
             <tr><td>${esc(L('أيام بدون راتب', 'Unpaid days'))} ${rule('WT-014')}</td><td class="num" style="text-align:end">− ${money(unpaid * daily)}</td></tr>
-            <tr><td>${esc(L('ضريبة الدخل (من نظام الرواتب)', 'Income tax (from payroll system)'))}</td><td class="num" style="text-align:end">− ${money(tax)}</td></tr>
+            <tr><td>${esc(L('ضريبة الدخل (مثال توضيحي؛ تُحسب في نظام الرواتب)', 'Income tax (illustrative; calculated by the payroll system)'))}</td><td class="num" style="text-align:end">− ${money(tax)}</td></tr>
             <tr><td><b>${esc(L('صافي الراتب', 'Net pay'))}</b></td><td class="num" style="text-align:end"><b>${money(net)}</b></td></tr>
           </tbody></table></div>
           <div class="msg info" style="margin-top:12px">${icon('info', 16)}<div>${esc(L('لديك 5 أيام عمل للاستفسار عن القسيمة، و7 أيام للاعتراض على أي خصم.', 'You have 5 working days to query a payslip and 7 days to dispute a deduction.'))} ${rule('CP-006')} ${rule('CP-007')}</div></div>
@@ -585,7 +591,7 @@
   function vEmpProfile() {
     const e = me(); const mgr = empById.get(e.managerId);
     return `
-      <div class="page-head"><div style="display:flex;gap:12px;align-items:center">${avatar(e, 'lg')}<div><h1>${esc(T(e.name))}</h1><p>${esc(`${e.staffNo} · ${T(e.position)}`)}</p></div></div><button class="btn" data-act="toast" data-msg="${esc(L('أُرسل طلب التحديث للموارد البشرية للتحقق.', 'Update request sent to HR for verification.'))}">${esc(L('طلب تحديث البيانات', 'Request data update'))}</button></div>
+      <div class="page-head"><div style="display:flex;gap:12px;align-items:center">${avatar(e, 'lg')}<div><h1>${esc(T(e.name))}</h1><p>${esc(`${e.staffNo} · ${T(e.position)}`)}</p></div></div><button class="btn" data-act="toast" data-msg="${esc(L('أُرسل طلب التحديث للموارد البشرية للتحقق.', 'Update request sent to HR for verification.'))}">${esc(L('طلب تحديث البيانات', 'Request data update'))}</button><button class="btn danger" data-act="resign-open">${esc(L('تقديم استقالة', 'Submit resignation'))}</button></div>
       <div class="grid g-2">
         <section class="card"><h2>${esc(L('بيانات التوظيف', 'Employment'))}</h2><dl class="kv">
           <dt>${esc(L('القسم', 'Department'))}</dt><dd>${esc(T(e.deptName))}</dd><dt>${esc(L('موقع العمل', 'Duty station'))}</dt><dd>${esc(officeName(e.office))}</dd>
@@ -626,8 +632,8 @@
         ${tile(L('وظائف شاغرة مفتوحة', 'Open vacancies'), fmtN(D.vacancies.length), L(`${D.candidates.length} مرشحاً`, `${D.candidates.length} candidates`), 'nav-recruitment', 'brief')}
       </div>
       <div class="grid g-2">
-        <section class="card"><h2>${esc(L('فترات تجربة تنتهي قريباً', 'Probation ending soon'))} <span class="count">${pe.length}</span></h2>${empMiniTable(pe, (e) => fmtD(e.probationEnd), (e) => `<button class="btn sm" data-act="toast" data-msg="${esc(L(`أُرسل تقييم التجربة إلى مدير ${T(e.name.short)} عبر Teams.`, `Probation appraisal sent to ${T(e.name.short)}'s manager in Teams.`))}">${esc(L('بدء التقييم', 'Start appraisal'))}</button>`)}</section>
-        <section class="card"><h2>${esc(L('عقود تنتهي خلال 30 يوماً', 'Contracts ending in 30 days'))} <span class="count">${ce.length}</span></h2>${empMiniTable(ce.slice(0, 8), (e) => fmtD(e.contractEnd), (e) => `<button class="btn sm" data-act="toast" data-msg="${esc(L('أُنشئ طلب تجديد عقد كتغيير حالة.', 'Contract renewal created as a change of status.'))}">${esc(L('تجديد', 'Renew'))}</button>`)}</section>
+        <section class="card"><h2>${esc(L('فترات تجربة تنتهي قريباً', 'Probation ending soon'))} <span class="count">${pe.length}</span></h2>${empMiniTable(pe, (e) => fmtD(e.probationEnd), (e) => `<button class="btn sm" data-act="appraisal-start" data-id="${e.id}" data-kind="PROBATION">${esc(L('بدء التقييم', 'Start appraisal'))}</button>`)}</section>
+        <section class="card"><h2>${esc(L('عقود تنتهي خلال 30 يوماً', 'Contracts ending in 30 days'))} <span class="count">${ce.length}</span></h2>${empMiniTable(ce.slice(0, 8), (e) => fmtD(e.contractEnd), (e) => `<button class="btn sm" data-act="cos-new" data-id="${e.id}" data-type="RENEWAL">${esc(L('تجديد', 'Renew'))}</button>`)}</section>
       </div>
       <div class="grid g-2">
         <section class="card"><h2>${esc(L('الموظفون حسب المكتب', 'Staff by office'))}</h2>${bars(byOffice, { title: L('الموظفون حسب المكتب', 'Staff by office') })}</section>
@@ -636,7 +642,8 @@
       <div class="grid g-2">
         <section class="card"><h2>${esc(L('إجراءات سريعة', 'Quick actions'))}</h2><div class="quick">${[['brief', L('نشر وظيفة شاغرة', 'Post a vacancy'), 'nav', 'recruitment'], ['cal', L('مراجعة طلبات الإجازة', 'Review leave requests'), 'nav', 'leave'], ['download', L('تصدير مدخلات الرواتب', 'Export payroll inputs'), 'toast', L('صُدّرت مدخلات رواتب الشهر للمالية (محاكاة).', 'Monthly payroll inputs exported to Finance (simulated).')], ['teams', L('تذكير الإقرارات الناقصة', 'Remind missing acknowledgements'), 'remind-acks', '']].map(([ic, l, act, x]) => `<button data-act="${act}" ${act === 'nav' ? `data-v="${x}"` : act === 'toast' ? `data-msg="${esc(x)}"` : ''}><span class="qi">${icon(ic, 16)}</span><span>${esc(l)}</span></button>`).join('')}</div></section>
         <section class="card"><div class="card-head"><h2>${esc(L('آخر النشاطات', 'Recent activity'))}</h2><button class="btn subtle sm" data-act="activity">${esc(L('عرض الكل', 'View all'))}</button></div><div class="list">${D.activity.slice(0, 5).map((a) => `<div class="list-item">${icon(a.ch === 'outlook' ? 'mail' : 'teams')}<div class="grow"><div class="t" style="font-weight:400">${esc(T(a))}</div><div class="subtle">${esc(`${a.ch === 'outlook' ? 'Outlook' : 'Teams'} · ${fmtD(a.at)}`)}</div></div></div>`).join('')}</div></section>
-      </div>`;
+      </div>
+      ${EXT.hrDash.map((fn) => fn()).join('')}`;
   }
   function empMiniTable(list, dateFn, actFn) {
     if (!list.length) return `<div class="empty">${esc(L('لا يوجد', 'None'))}</div>`;
@@ -734,6 +741,7 @@
     if (c.stage === 'INTERVIEW' && c.score == null) return R('RC-008', 'يجب تسجيل نتيجة المقابلة.', 'Interview score must be recorded.');
     if (c.stage === 'EVALUATION' && c.evals.submitted < c.evals.required) return R('RC-008', `نماذج التقييم ${c.evals.submitted}/${c.evals.required}: كل عضو في اللجنة يجب أن يقدّم نموذجه.`, `Evaluations ${c.evals.submitted}/${c.evals.required}: every panel member must submit a form.`);
     if (c.stage === 'SCREENING' && c.refs < 2) return R('RC-014', `المراجع ${c.refs}/2.`, `References ${c.refs}/2.`);
+    if (c.stage === 'SCREENING' && c.mds === false) return R('RC-020', 'فحص الإفصاح عن سوء السلوك (MDS) لدى جهات العمل السابقة لم يكتمل.', 'Misconduct disclosure check (MDS) with previous employers is not complete.');
     if (c.stage === 'SCREENING' && c.screening !== 'CLEARED') return R('RC-015', 'لا يصدر عرض قبل اجتياز فحص الامتثال.', 'No offer before compliance screening is cleared.');
     if (!next) return null;
     return null;
@@ -747,6 +755,7 @@
       return `<div class="cand"><div class="t">${esc(T(c.name))}</div>
         <div class="row">${c.score != null ? badge('b-brand', L(`النتيجة ${c.score}`, `Score ${c.score}`)) : ''}${c.internal ? badge('b-info', L('داخلي', 'Internal')) : ''}<span class="subtle">${esc(L(`${c.years} سنوات خبرة`, `${c.years} yrs exp.`))}</span></div>
         ${['EVALUATION', 'SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row subtle">${esc(L(`التقييمات ${c.evals.submitted}/${c.evals.required} · المراجع ${c.refs}/2`, `Evals ${c.evals.submitted}/${c.evals.required} · refs ${c.refs}/2`))}</div>` : ''}
+        ${['SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row"><span class="subtle">${esc(L('سوء السلوك (MDS):', 'Misconduct check (MDS):'))}</span>${c.mds === false ? badge('b-warn', L('قيد الطلب', 'Requested')) : badge('b-ok', L('لا يوجد', 'Clear'))}</div>` : ''}
         ${['SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row"><span class="subtle">${esc(L('فحص الامتثال:', 'Screening:'))}</span>${badge(scr[c.screening][0], scr[c.screening][1])}</div>` : ''}
         ${g ? `<div class="msg warn" style="padding:6px 8px">${icon('lock', 14)}<div>${esc(T(g))} ${rule(g.rule)}</div></div>` : ''}
         <div class="row">
@@ -868,16 +877,19 @@
           <p class="subtle" style="margin:0">${esc(L('خطط للتجديد أو النقل أو التقليص قبل انتهاء المنحة.', 'Plan renewal, transfer or redundancy before the grant ends.'))} ${rule('SP-010')}</p>
         </section>
       </div>
-      <section class="card"><div class="card-head"><h2>${esc(L('بانتظار اعتمادك', 'Awaiting your approval'))} <span class="count">${pend}</span></h2><button class="btn subtle sm" data-act="nav" data-v="approvals">${esc(L('عرض الكل', 'View all'))}</button></div>${apList(D.approvals.filter((a) => a.status === 'PENDING').slice(0, 4))}</section>`;
+      <section class="card"><div class="card-head"><h2>${esc(L('بانتظار اعتمادك', 'Awaiting your approval'))} <span class="count">${pend}</span></h2><button class="btn subtle sm" data-act="nav" data-v="approvals">${esc(L('عرض الكل', 'View all'))}</button></div>${apList(D.approvals.filter((a) => a.status === 'PENDING').slice(0, 4))}</section>
+      ${EXT.cdDash.map((fn) => fn()).join('')}`;
   }
 
   function apSubject(a) {
+    if (EXT.apTypes[a.type] && EXT.apTypes[a.type].subject) return EXT.apTypes[a.type].subject(a);
     if (a.type === 'HIRE') return T(a.data.candidate);
     if (a.type === 'NEW_POSITION') return T(a.data.title);
     const e = empById.get(a.subject); return e ? T(e.name) : '';
   }
   function apChecks(a) { // policy checks shown to the approver
     const out = { errors: [], warnings: [], info: [] };
+    if (EXT.apTypes[a.type] && EXT.apTypes[a.type].checks) return EXT.apTypes[a.type].checks(a, out);
     const d = a.data;
     if (a.type === 'SALARY_INCREASE') {
       if (d.percent > D.POLICY.meritMaxPercent) out.errors.push(R('CP-010', `الزيادة ${d.percent}% تتجاوز الحد الأقصى ${D.POLICY.meritMaxPercent}%.`, `${d.percent}% exceeds the ${D.POLICY.meritMaxPercent}% maximum.`));
@@ -910,6 +922,7 @@
     return out;
   }
   function apFacts(a) {
+    if (EXT.apTypes[a.type] && EXT.apTypes[a.type].facts) return EXT.apTypes[a.type].facts(a);
     const d = a.data; const f = [];
     const e = a.subject ? empById.get(a.subject) : null;
     if (e) f.push([L('الموظف', 'Employee'), `${T(e.name)} · ${T(e.position)}`]);
@@ -988,8 +1001,8 @@
       ${e.category === 'REGULAR' ? `<div><p class="section-title">${esc(L('أرصدة الإجازات', 'Leave balances'))}</p><dl class="kv"><dt>${esc(T(LEAVE.ANNUAL))}</dt><dd class="num">${fmtN(b.annual.available, 2)}</dd><dt>${esc(L('مرضية (كامل)', 'Sick (full pay)'))}</dt><dd class="num">${fmtN(b.sick.full)}</dd><dt>${esc(L('علامات التأخير هذا الشهر', 'Late marks this month'))}</dt><dd class="num">${e.lateMarks}</dd></dl></div>` : ''}
       <div><p class="section-title">${esc(L('الامتثال', 'Compliance'))}</p><div class="btn-row">${e.screening === 'CLEARED' ? badge('b-ok', L('الفحص: مُجاز', 'Screening: cleared'), 'check') : badge('b-bad', L('الفحص: مستحق', 'Screening: due'), 'warn')}${e.ackMissing.length ? badge('b-warn', L(`${e.ackMissing.length} إقرار ناقص`, `${e.ackMissing.length} ack pending`)) : badge('b-ok', L('الإقرارات مكتملة', 'Acknowledgements complete'), 'check')}${badge('b-neutral', L(`التدريبات ${e.trainingsDone.length}/${D.TRAININGS.length}`, `Trainings ${e.trainingsDone.length}/${D.TRAININGS.length}`))}</div></div>
       <div><p class="section-title">${esc(L('التعويضات', 'Compensation'))} ${rule('RD-003')}</p>${canSeePay ? `<dl class="kv"><dt>${esc(L('الراتب الأساسي', 'Base salary'))}</dt><dd class="num">${money(e.baseSalary)}</dd><dt>${esc(L('آخر تقييم', 'Last rating'))}</dt><dd>${esc(T(RATING[e.rating]))}</dd></dl><p class="subtle" style="margin:6px 0 0">${icon('lock', 12)} ${esc(L('حقل محمي: يظهر لمدير الموارد البشرية والمالية والمدير القُطري فقط.', 'Protected field: visible to HR manager, Finance and Country Director only.'))}</p>` : `<span class="locked">${icon('lock', 14)}${esc(L('محمي', 'Protected'))}</span>`}</div>`;
-    const footer = S.role === 'HR' ? `<button class="btn" data-act="toast" data-msg="${esc(L('أُنشئ تغيير حالة جديد (مسودة).', 'New change of status created (draft).'))}">${esc(L('تغيير حالة', 'Change of status'))}</button><button class="btn" data-act="toast" data-msg="${esc(L('أُنشئت شهادة الخبرة من القالب.', 'Employment certificate generated from template.'))}">${esc(L('شهادة خبرة', 'Employment certificate'))}</button>` : '';
-    return drawer(T(e.name), body, footer, avatar(e));
+    const footer = S.role === 'HR' ? `<button class="btn" data-act="cos-new" data-id="${e.id}">${esc(L('تغيير حالة', 'Change of status'))}</button><button class="btn" data-act="toast" data-msg="${esc(L('أُنشئت شهادة الخبرة من القالب.', 'Employment certificate generated from template.'))}">${esc(L('شهادة خبرة', 'Employment certificate'))}</button>` : '';
+    return drawer(T(e.name), body + EXT.empSections.map((fn) => fn(e)).join(''), EXT.empFooter.map((fn) => fn(e)).join('') + footer, avatar(e));
   }
 
   function apDrawer(id) {
@@ -1073,6 +1086,7 @@
   }
   function overlayHTML() {
     const o = S.overlay; if (!o) return '';
+    if (EXT.overlays[o.type]) return EXT.overlays[o.type](o);
     if (o.type === 'emp') return empDrawer(o.id);
     if (o.type === 'ap') return apDrawer(o.id);
     if (o.type === 'leave-preview') return leavePreview(o.id);
@@ -1093,17 +1107,23 @@
     HR: { dashboard: vHrDash, employees: vHrEmployees, leave: vHrLeave, recruitment: vHrRecruit, compliance: vHrCompliance, settings: vHrSettings },
     CD: { dashboard: vCdDash, approvals: vCdApprovals, workforce: vCdWorkforce, compliance: vCdCompliance }
   };
-  let lastKey = '';
+  let lastOverlay = '', lastKey = '';
   function render() {
     document.documentElement.lang = S.lang;
     document.documentElement.dir = S.lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.dataset.theme = S.theme;
     document.title = `HRMO — ${roleLabel(S.role)}`;
+    if (!VIEWS[S.role] || !NAV[S.role]) S.role = 'EMPLOYEE';
+    if (!VIEWS[S.role][S.view[S.role]]) S.view[S.role] = Object.keys(VIEWS[S.role])[0];
     const key = `${S.role}:${S.view[S.role]}`;
     const content = document.getElementById('content');
     const scroll = content && key === lastKey ? content.scrollTop : 0;
+    const oKey = S.overlay ? JSON.stringify(S.overlay) : '';
+    const oBody = document.querySelector('.dbody, .mbody'); const oScroll = oBody && oKey === lastOverlay ? oBody.scrollTop : 0;
     document.getElementById('app').innerHTML = shell(VIEWS[S.role][S.view[S.role]]()) + overlayHTML();
     const c2 = document.getElementById('content'); if (c2) c2.scrollTop = scroll;
+    if (oKey && oKey === lastOverlay) { document.querySelectorAll('.scrim, .drawer, .modal').forEach((x) => x.classList.add('still')); const b2 = document.querySelector('.dbody, .mbody'); if (b2) b2.scrollTop = oScroll; }
+    lastOverlay = oKey;
     syncIndeterminate();
     lastKey = key;
     save();
@@ -1128,6 +1148,7 @@
     toast(L('أُرسل الطلب. هذه البطاقة التي تصل لمديرك في Teams.', 'Request sent. This is the card your manager receives in Teams.'), 'ok');
   }
   function managerDecide(id, v) {
+    audit(`قرار المدير على ${id}: ${v === 'REJECT' ? 'رفض' : 'موافقة'}`, `Manager decision on ${id}: ${v === 'REJECT' ? 'rejected' : 'approved'}`);
     const r = D.leaveRequests.find((x) => x.id === id);
     if (v === 'REJECT') { r.status = 'REJECTED'; addActivity('EMPLOYEE', 'teams', `رفض المدير طلبك ${id}`, `Your manager rejected ${id}`, 'leave'); }
     else { r.status = 'PENDING_HR'; addActivity('HR', 'teams', `طلب إجازة ${id} بانتظار اعتماد الموارد البشرية`, `Leave ${id} awaiting HR approval`, 'leave'); addActivity('EMPLOYEE', 'teams', `وافق مديرك على ${id}، والطلب الآن لدى الموارد البشرية`, `Your manager approved ${id}; now with HR`, 'leave'); }
@@ -1136,6 +1157,7 @@
   }
   function hrDecide(id, approve, quiet) {
     const say = quiet ? () => {} : toast;
+    audit(`قرار الموارد البشرية على ${id}: ${approve ? 'اعتماد' : 'رفض'}`, `HR decision on ${id}: ${approve ? 'approved' : 'rejected'}`);
     const r = D.leaveRequests.find((x) => x.id === id); const e = empById.get(r.empId);
     if (!approve) { r.status = 'REJECTED'; say(L('تم رفض الطلب وإبلاغ الموظف عبر Teams.', 'Rejected; employee notified in Teams.'), 'bad'); }
     else if (r.type === 'UNPAID') {
@@ -1151,6 +1173,8 @@
   function apDecide(id, status, via) {
     const a = D.approvals.find((x) => x.id === id);
     a.status = status; a.decidedVia = via || 'HRMO';
+    audit(`${status === 'APPROVED' ? 'اعتماد' : 'رفض'} ${APTYPE[a.type].ar}: ${a.id}`, `${status === 'APPROVED' ? 'Approved' : 'Rejected'} ${APTYPE[a.type].en}: ${a.id}`);
+    EXT.onDecide.forEach((fn) => fn(a, status));
     if (a.leaveId) { const r = D.leaveRequests.find((x) => x.id === a.leaveId); if (r) r.status = status === 'APPROVED' ? 'APPROVED' : 'REJECTED'; }
     addActivity('HR', 'outlook', `${status === 'APPROVED' ? 'اعتمد' : 'رفض'} المدير القُطري ${APTYPE[a.type].ar}: ${a.id}`, `Country Director ${status === 'APPROVED' ? 'approved' : 'rejected'} ${APTYPE[a.type].en}: ${a.id}`, a.type === 'HIRE' ? 'recruitment' : 'dashboard');
     S.overlay = null; render();
@@ -1199,7 +1223,7 @@
       case 'hr-reject': S.confirm = { kind: 'hr-reject', id }; openOverlay({ type: 'confirm' }); break;
       case 'vac': S.vacancy = v; render(); break;
       case 'advance': { const c = D.candidates.find((x) => x.id === id); if (gate(c)) return; const i = D.STAGES.indexOf(c.stage); c.stage = D.STAGES[i + 1]; if (c.stage === 'INTERVIEW' && c.score == null) c.score = 70 + (c.years % 20); if (c.stage === 'SCREENING' && c.screening === 'NOT_STARTED') c.screening = 'PENDING'; if (c.stage === 'EVALUATION' && !c.evals.submitted) c.evals.submitted = 1; render(); break; }
-      case 'screen': { const c = D.candidates.find((x) => x.id === id); c.screening = 'CLEARED'; if (c.refs < 2) c.refs = 2; render(); toast(L('سُجّل اجتياز فحص الامتثال (النتيجة التفصيلية مقيّدة).', 'Screening recorded as cleared (details restricted).'), 'ok'); break; }
+      case 'screen': { const c = D.candidates.find((x) => x.id === id); c.screening = 'CLEARED'; c.mds = true; if (c.refs < 2) c.refs = 2; render(); toast(L('سُجّل اجتياز فحص الامتثال (النتيجة التفصيلية مقيّدة).', 'Screening recorded as cleared (details restricted).'), 'ok'); break; }
       case 'remind-panel': { const c = D.candidates.find((x) => x.id === id); c.evals.submitted = c.evals.required; render(); toast(L('أُرسل التذكير، وقدّم أعضاء اللجنة نماذجهم (محاكاة).', 'Reminder sent; panel submitted their forms (simulated).'), 'ok'); break; }
       case 'to-cd': { const c = D.candidates.find((x) => x.id === id); c.sentToCd = true; const vac = D.vacancies.find((x) => x.id === c.vacancy); D.approvals.unshift({ id: `AP-${600 + D.approvals.length}`, type: 'HIRE', requester: D.personas.HR, created: D.todayISO, status: 'PENDING', data: { candidate: c.name, vacancy: c.vacancy, rank: 1, score: c.score, panel: 3, evals: `${c.evals.submitted}/${c.evals.required}`, refs: `${c.refs}/2`, screening: c.screening, salary: Math.round(({ 5: 1050, 6: 1300, 7: 1650 }[vac.grade] || 1000)), start: iso(addDays(TODAY, 14)) }, rules: ['RC-013'] }); addActivity('CD', 'teams', `اعتماد تعيين: ${c.name.ar}`, `Hiring approval: ${c.name.en}`, 'approvals'); render(); toast(L('أُرسل للمدير القُطري كبطاقة في Teams وOutlook.', 'Sent to the Country Director as a Teams and Outlook card.'), 'ok'); break; }
       case 'remind-acks': { const n = missingAck().length; addActivity('HR', 'teams', `أُرسلت تذكيرات إلى ${n} موظفاً`, `Reminders sent to ${n} employees`, 'compliance'); render(); toast(L(`أُرسل تذكير عبر Teams إلى ${n} موظفاً.`, `Teams reminder sent to ${n} employees.`), 'ok'); break; }
@@ -1229,7 +1253,7 @@
       case 'hr-sel-clear': S.hrSel = []; render(); break;
       case 'hr-bulk-approve': S.confirm = { kind: 'hr-bulk', ids: [...S.hrSel] }; openOverlay({ type: 'confirm' }); break;
       case 'confirm-ok': runConfirm(); break;
-      default: break;
+      default: if (EXT.actions[act]) EXT.actions[act](t, ev); break;
     }
   });
   function runConfirm() {
@@ -1251,6 +1275,7 @@
 
   document.addEventListener('input', (ev) => {
     const t = ev.target;
+    for (const fn of EXT.onInput) if (fn(t, ev)) return;
     if (t.dataset.bind) {
       S.leaveDraft[t.dataset.bind] = t.value;
       if (t.dataset.bind === 'reason') return;
@@ -1275,14 +1300,15 @@
   });
   document.addEventListener('change', (ev) => {
     const t = ev.target;
-    if (t.dataset.toggle) { setP(t.dataset.toggle, t.checked); render(); toast(L('حُفظ الإعداد وطُبّق فوراً.', 'Setting saved and applied immediately.'), 'ok'); return; }
+    for (const fn of EXT.onChange) if (fn(t, ev)) return;
+    if (t.dataset.toggle) { setP(t.dataset.toggle, t.checked); audit(`تعديل قاعدة ${t.dataset.toggle}: ${t.checked ? 'مفعّلة' : 'معطّلة'}`, `Rule ${t.dataset.toggle}: ${t.checked ? 'on' : 'off'}`); render(); toast(L('حُفظ الإعداد وطُبّق فوراً.', 'Setting saved and applied immediately.'), 'ok'); return; }
     if (t.dataset.pref === 'lang') { S.lang = t.value; render(); return; }
     if (t.dataset.pref === 'theme') { S.theme = t.checked ? 'dark' : 'light'; render(); return; }
     if (t.dataset.pref === 'collapsed') { S.collapsed = t.checked; render(); return; }
     if (t.dataset.eff) { S.effDate = t.value; toast(L(`ستسري التعديلات من ${fmtD(t.value)}.`, `Changes take effect from ${fmtD(t.value)}.`), 'ok'); return; }
     if (t.dataset.bind === 'type') { S.leaveDraft.type = t.value; render(); }
     if (t.dataset.dir && t.dataset.dir !== 'q') { S.dir[t.dataset.dir] = t.dataset.dir === 'per' ? Number(t.value) : t.value; S.dir.page = 1; refreshDir(); }
-    if (t.dataset.param) { const p = PARAMS.find((x) => x.k === t.dataset.param); const val = p.type === 'number' ? Math.max(p.min, Math.min(p.max, Number(t.value))) : t.value; setP(p.k, val); render(); toast(L('حُفظ الإعداد وطُبّق فوراً.', 'Setting saved and applied immediately.'), 'ok'); }
+    if (t.dataset.param) { const p = PARAMS.find((x) => x.k === t.dataset.param); const val = p.type === 'number' ? Math.max(p.min, Math.min(p.max, Number(t.value))) : t.value; setP(p.k, val); audit(`تعديل إعداد ${p.k} إلى ${val}`, `Setting ${p.k} changed to ${val}`); render(); toast(L('حُفظ الإعداد وطُبّق فوراً.', 'Setting saved and applied immediately.'), 'ok'); }
     if (t.dataset.wday) { const days = DAYNAMES.filter((dn) => document.querySelector(`[data-wday="${dn}"]`).checked); if (!days.length) { t.checked = true; return; } D.POLICY.workWeek.days = days; render(); toast(L('حُدّث أسبوع العمل.', 'Work week updated.'), 'ok'); }
   });
   document.addEventListener('keydown', (ev) => {
@@ -1291,7 +1317,7 @@
     if (ev.key === 'Enter' && ev.target.dataset.act === 'global-search') {
       const q = ev.target.value.trim(); if (!q) return;
       if (S.role === 'EMPLOYEE') { toast(L('البحث في الدليل متاح لفريق الموارد البشرية والمدير القُطري.', 'Directory search is available to HR and the Country Director.')); return; }
-      if (S.role === 'CD') { const hit = dirFilteredFor(q)[0]; if (hit) openOverlay({ type: 'emp', id: hit.id }); else toast(L('لا نتائج', 'No results'), 'bad'); return; }
+      if (S.role !== 'HR') { const hit = dirFilteredFor(q)[0]; if (hit) openOverlay({ type: 'emp', id: hit.id }); else toast(L('لا نتائج', 'No results'), 'bad'); return; }
       S.dir.q = q; S.dir.page = 1; setView('employees');
     }
   });
@@ -1311,9 +1337,55 @@
 
   addEventListener('resize', closeMenu);
   document.addEventListener('scroll', () => { if (menuState) closeMenu(); }, true);
+  // ---------- Helpers shared with feature modules ----------
+  function audit(ar, en) {
+    const log = EXT.state.audit || (EXT.state.audit = []);
+    const p = persona();
+    log.unshift({ at: new Date().toISOString(), who: p ? p.id : '', role: S.role, ar, en });
+    if (log.length > 400) log.length = 400;
+  }
+  const store = (k, init) => { if (EXT.state[k] === undefined) EXT.state[k] = EXT.saved[k] !== undefined ? EXT.saved[k] : init(); return EXT.state[k]; };
+  function addNav(role, g, label, item, groupIndex) {
+    NAV[role] = NAV[role] || [];
+    let gr = NAV[role].find((x) => x.g === g);
+    if (!gr) { gr = { g, ar: label[0], en: label[1], items: [] }; if (groupIndex == null || groupIndex >= NAV[role].length) NAV[role].push(gr); else NAV[role].splice(groupIndex, 0, gr); }
+    gr.items.push(item);
+  }
+  const pageHead = (title, desc, actions) => `<div class="page-head"><div><h1>${esc(title)}</h1>${desc ? `<p>${desc}</p>` : ''}</div>${actions ? `<div class="btn-row">${actions}</div>` : ''}</div>`;
+  function table(head, rows, empty) {
+    if (!rows.length) return empty || emptyState('list', L('لا توجد بيانات', 'Nothing here yet'));
+    return `<div class="table-wrap"><table><thead><tr>${head.map((h) => (typeof h === 'string' ? `<th>${esc(h)}</th>` : `<th class="${h[1]}">${esc(h[0])}</th>`)).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  }
+  function docModal(title, bodyHTML, ref) {
+    const org = T(D.ORG);
+    return modal(title, `<div class="doc" id="doc-print"><div class="doc-head"><div class="doc-logo">HM</div><div><b>${esc(org)}</b><div class="subtle">${esc(L('إدارة الموارد البشرية', 'Human Resources'))}</div></div><div class="doc-meta"><div>${esc(L('التاريخ', 'Date'))}: ${esc(fmtD(D.todayISO))}</div>${ref ? `<div>${esc(L('المرجع', 'Ref'))}: <bdi>${esc(ref)}</bdi></div>` : ''}</div></div>${bodyHTML}<div class="doc-sign"><div>${esc(L('التوقيع', 'Signature'))}</div><div class="line"></div><div class="subtle">${esc(L('مدير الموارد البشرية', 'HR Manager'))}</div></div><div class="doc-foot subtle">${esc(L('مستند مولَّد من قالب في HRMO · بيانات تجريبية', 'Generated from a template in HRMO · demo data'))}</div></div>`,
+      `<button class="btn" data-act="close-overlay">${esc(L('إغلاق', 'Close'))}</button><button class="btn primary" data-act="doc-print">${icon('doc', 16)}${esc(L('طباعة / PDF', 'Print / PDF'))}</button>`);
+  }
+  function printDoc() {
+    const el = document.getElementById('doc-print'); if (!el) return;
+    const w = window.open('', '_blank'); if (!w) { toast(L('اسمح بالنوافذ المنبثقة للطباعة.', 'Allow pop-ups to print.'), 'bad'); return; }
+    const css = Array.from(document.querySelectorAll('link[rel=stylesheet]')).map((l) => `<link rel="stylesheet" href="${l.href}">`).join('');
+    w.document.write(`<!doctype html><html lang="${S.lang}" dir="${S.lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><title>HRMO</title>${css}<style>body{background:#fff;padding:24px}.doc{box-shadow:none;border:0;max-width:760px;margin:auto}</style></head><body>${el.outerHTML}<script>setTimeout(function(){print()},400)<\/script></body></html>`);
+    w.document.close();
+  }
+  EXT.actions['doc-print'] = printDoc;
+
   load();
-  document.documentElement.lang = S.lang; document.documentElement.dir = S.lang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.dataset.theme = S.theme;
-  document.getElementById('app').innerHTML = shell(skeletonHTML());
-  setTimeout(render, 350);
-  window.__hrmo = { S, D, render, validateLeave, balances };
+  EXT.state.audit = EXT.saved.audit || [];
+  const HRMO = {
+    S, D, NAV, VIEWS, ROLES, EXT, P, CAT, LEAVE, LSTATUS, RATING, APTYPE, STAGE, DAYNAMES, DAYLABEL, PARAMS, DEFAULT_POLICY,
+    L, T, esc, icon, fmtN, fmtD, fmtDs, money, parse, iso, addDays, daysBetween, TODAY, initials,
+    badge, rule, avatar, who, tile, msgs, bars, meter, toast, addActivity, emptyState, reqTable, statusBadge, R,
+    empById, me, persona, active, balances, validateLeave, serviceDays, serviceMonths, officeName, grant, isWorkDay, workingDays, businessDaysUntil,
+    render, save, openOverlay, closeOverlay, setView, drawer, modal, acard, channelPreview, managerDecide, apSubject, roleLabel, flagList,
+    audit, store, addNav, pageHead, table, docModal, getP, setP, openMenu, closeMenu, mItem
+  };
+  window.HRMO = HRMO;
+  window.__hrmo = { S, D, render, validateLeave, balances, EXT, VIEWS };
+  setTimeout(() => {
+    if (!NAV[S.role]) S.role = 'EMPLOYEE';
+    document.documentElement.lang = S.lang; document.documentElement.dir = S.lang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.dataset.theme = S.theme;
+    document.getElementById('app').innerHTML = shell(skeletonHTML());
+    setTimeout(render, 300);
+  }, 0);
 })();
