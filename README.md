@@ -14,9 +14,10 @@ The demo in [`demo/`](demo/) runs entirely on GitHub Pages with fictitious data 
 
 | Workspace / الواجهة | What it shows / ما تعرضه |
 |---|---|
-| **Employee** / الموظف | Leave balances and requests with instant policy checks, monthly timesheet with grant allocation, payslips, policy acknowledgements, profile |
-| **HR** / الموارد البشرية | Dashboard, 800-employee directory, leave approval queue, recruitment pipeline with mandatory gates (panel evaluations, references, compliance screening), compliance tracking, **live policy settings** |
-| **Country Director** / المدير القُطري | Executive dashboard (payroll cost by grant, funding risk, turnover, leave liability), approvals with automatic policy checks, workforce analytics |
+| **Employee** / الموظف | Leave with instant policy checks, timesheets with grant allocation, overtime, payslips, letters (salary, experience, embassy), performance self-assessment and objectives, learning, travel requests, equipment, declarations (conflict of interest, gifts), HR helpdesk, wellbeing and confidential support, safety check-in replies, resignation |
+| **Line manager** / المدير المباشر | Team overview, one approvals inbox (leave, timesheets, overtime, travel, appraisals), team leave calendar, performance reviews and improvement plans, org chart |
+| **HR** / الموارد البشرية | Dashboard and HR metrics, 800-employee directory, onboarding checklists, changes of status, separations with clearance and final settlement, positions and budget, leave and attendance, recruitment with mandatory gates (incl. misconduct disclosure screening), performance cycle, learning and training needs, staff safety check-ins, wellbeing (R&R, burnout watch, hardship), professional licences, letters, helpdesk, disciplinary and grievance cases with warning ladder, declarations, travel and security clearance, assets, emergency surge roster, audit log, **live policy settings** |
+| **Country Director** / المدير القُطري | Executive dashboard (payroll cost by grant, funding risk, turnover, end-of-service and leave liabilities, diversity and localization), approvals with automatic policy checks (hires, changes of status, sanctions, positions), staff safety, workforce analytics |
 
 Approvals are shown as they arrive in **Teams chat** and **Outlook** as actionable cards. The demo supports Arabic (RTL) and English, light and dark themes, and phone screens.
 
@@ -38,6 +39,7 @@ To run locally, open `demo/index.html` in a browser. / للتشغيل محليا
 |---|---|
 | ![Employee](docs/images/ar-employee.png) | ![HR](docs/images/ar-hr.png) |
 | ![Teams card](docs/images/en-teams-card.png) | ![Country Director](docs/images/ar-country-director.png) |
+| ![Line manager](docs/images/en-manager.png) | ![Staff safety](docs/images/ar-safety.png) |
 
 ## Documentation / التوثيق
 

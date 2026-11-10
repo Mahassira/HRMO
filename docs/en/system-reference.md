@@ -642,4 +642,103 @@ The source manual contained gaps and contradictions. The baseline resolves them 
 
 ---
 
+## 24. Extended modules (v2)
+
+Added after a CHRO-level gap review. Each module is implemented in the demo (`demo/assets/modules/`) and parameterised in `policy-defaults.json`.
+
+### 24.1 Line-manager workspace (MG)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| MG-001 | Every employee has exactly one line manager; the manager role is derived from the reporting line, not assigned manually. | `managerWorkspace.deriveFromReportingLine` | `true` | Block |
+| MG-002 | The manager sees a single approvals inbox: leave, timesheets, overtime, travel, appraisals and any module-registered item, with bulk approve for timesheets. | `managerWorkspace.bulkApproveTimesheets` | `true` | — |
+| MG-003 | The team calendar shows approved **and** pending leave so coverage gaps are visible before approving. | `managerWorkspace.calendarShowsPending` | `true` | Warn |
+| MG-004 | Sensitive data (salary, medical, case files) is never shown in the manager workspace. | `managerWorkspace.hideSensitive` | `true` | Block |
+| MG-005 | The organisation chart is generated from line-manager data and available to all roles; vacant positions are shown. | — | — | — |
+
+### 24.2 Onboarding and recruitment additions
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| ON-011 | E-mail and system accounts are requested from IT on hire approval so they are ready on day one. | `onboarding.itAccountsBeforeStart` | `true` | Warn |
+| RC-020 | **Misconduct disclosure screening** (reference check against sexual exploitation, abuse and harassment) must be completed before a candidate leaves screening. | `recruitment.misconductDisclosureScreening` | `true` | Block |
+
+### 24.3 Duty of care — staff safety (DC)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| DC-001 | HR or security can launch a safety check-in for one or more offices after an incident; it is delivered by Teams, e-mail and SMS. | `dutyOfCare.channels` | `["TEAMS","EMAIL","SMS"]` | — |
+| DC-002 | Staff reply with one action: *I'm safe* or *I need help*. *Need help* alerts the security focal point immediately. | — | — | — |
+| DC-003 | Non-responders are escalated to the security focal point after the escalation window. | `dutyOfCare.escalateAfterMinutes` | `60` | Warn |
+| DC-004 | A live headcount by office (safe / need help / no reply) is visible to HR and the Country Director. | — | — | — |
+| DC-005 | Closing a check-in stores a report in the audit log. | — | — | — |
+| DC-006 | Emergency contacts must be on file for every employee; missing contacts are a compliance finding. | `dutyOfCare.requireEmergencyContact` | `true` | Warn |
+
+### 24.4 Wellbeing (WB)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| WB-001 | The wellbeing view combines R&R, burnout watch, hardship allowance and confidential support. | — | — | — |
+| WB-002 | Staff in hardship duty stations are entitled to rest & recuperation every N weeks for M days. | `wellbeing.rrEveryWeeks`, `wellbeing.rrDays` | `8`, `5` | Warn |
+| WB-003 | **Burnout watch:** staff with no leave for N months are flagged to HR and their manager. | `wellbeing.burnoutNoLeaveMonths` | `6` | Warn |
+| WB-004 | Requests for psychosocial support are confidential: routed only to the staff-care focal point, not visible to the manager or HR, and not stored in the personnel file. | — | — | Block |
+| WB-005 | Hardship allowance is a percentage of base salary by duty-station level. | `wellbeing.hardshipPercent` | `A:0, B:10, C:20` | — |
+
+### 24.5 Professional licences (LI)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| LI-001 | Positions can require a professional licence (doctor, nurse, pharmacist, driver…); number, issuer and expiry are tracked. | `licenses.requiredFor` | see JSON | — |
+| LI-002 | Holder, manager and HR are alerted N days before expiry. | `licenses.alertDays` | `60` | Warn |
+| LI-003 | An expired licence flags the employee as not assignable to licensed duties until renewed. | `licenses.blockOnExpiry` | `true` | Block |
+| LI-004 | Renewal evidence is uploaded to the personnel file. | — | — | — |
+
+### 24.6 HR helpdesk (HD)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| HD-001 | Staff questions to HR are tickets with a category and a response target in working days. | `helpdesk.slaBusinessDays` | `3` | Warn |
+| HD-002 | Unassigned and overdue tickets are shown on the HR dashboard. | — | — | — |
+| HD-003 | Harassment, fraud and safeguarding topics are **not** accepted as tickets; the employee is redirected to the independent channel (see §23). | — | — | Block |
+| HD-004 | Resolved tickets can be published as FAQs. | — | — | — |
+
+### 24.7 Position control (PC)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| PC-001 | Every approved position has a funding line (grant and percentage); recruitment cannot start without a funded vacancy. | `positionControl.requireFunding` | `true` | Block |
+| PC-002 | Budget versus actual staff cost is shown per grant, with alerts when a grant ends within the alert window. | `positionControl.grantEndAlertDays` | `90` | Warn |
+| PC-003 | Vacancy rate = (approved − filled) ÷ approved, per department. | — | — | — |
+| PC-004 | Creating a position requires Country Director approval. | `positionControl.approver` | `CD` | Block |
+
+### 24.8 Emergency surge roster (SR)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| SR-001 | A roster of staff willing and able to deploy within N hours of an emergency. | `surge.deployWithinHours` | `72` | — |
+| SR-002 | *Fully ready* = available + valid security training + medical clearance. | `surge.readinessCriteria` | see JSON | Warn |
+| SR-003 | Deployment is recorded as a temporary assignment and needs line-manager release. | — | — | — |
+
+### 24.9 Metrics, liabilities and diversity (KP, DI)
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| KP-001 | HR metrics: time to hire, cost per hire, absenteeism, probation pass rate, turnover (and voluntary share) and separation reasons. | — | — | — |
+| KP-002 | Metrics are filterable by office, department and period. | — | — | — |
+| KP-003 | Accrued end-of-service benefit and unused leave are computed monthly as a provision for Finance. | `metrics.provisionFrequency` | `MONTHLY` | — |
+| KP-004 | Metrics are exportable for donor and board reporting. | — | — | — |
+| KP-005 | Definitions of every metric are documented and shown on hover. | — | — | — |
+| DI-001 | Gender share overall and in leadership (grade threshold configurable). | `diversity.leadershipMinGrade` | `8` | — |
+| DI-002 | National-staff share in leadership (localization). | — | — | — |
+| DI-003 | Share of staff with disabilities (self-declared, voluntary). | — | — | — |
+| DI-004 | Diversity data is self-declared and visible only in aggregate (minimum group size). | `diversity.minGroupSize` | `5` | Block |
+
+### 24.10 Volunteers and incentive workers
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| CAT-007 | Incentive workers / community volunteers are a separate category: not employees, paid a fixed incentive, excluded from leave accrual, severance and payroll liabilities, and reported separately. | `employmentCategories.volunteer.*` | incentive `100`, isEmployee `false` | — |
+
+---
+
 *End of document.*

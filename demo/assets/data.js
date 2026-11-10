@@ -46,6 +46,10 @@
     warningValidityMonths: 12,
     resignationNoticeDays: 30,
     flags: { sickInProbation: true, overtimePreApproval: true, reackOnNewVersion: true, deemedResignationAuto: false },
+    care: { rrEveryWeeks: 8, rrDays: 5, burnoutNoLeaveMonths: 6, hardship: { A: 0, B: 10, C: 20 }, safetyEscalateMinutes: 60 },
+    licenses: { alertDays: 60 },
+    helpdesk: { slaBusinessDays: 3 },
+    separation: { severanceMonthsPerYear: 1, redundancyNoticeDays: 30 },
     leave: {
       ANNUAL: { entitlementDays: 21, accrual: 'MONTHLY', minServiceMonths: 3, carryOverMaxDays: 0 },
       SICK: { fullPayDays: 21, halfPayDays: 21, notifyWithinHours: 48 },
@@ -60,11 +64,11 @@
   // ---------- Reference data ----------
   const ORG = { ar: 'منظمة نموذجية للإغاثة', en: 'Sample Relief Organization' };
   const OFFICES = [
-    { id: 'MO', ar: 'المكتب الرئيسي', en: 'Main Office', w: 34 },
-    { id: 'NF', ar: 'المكتب الميداني الشمالي', en: 'North Field Office', w: 20 },
-    { id: 'SF', ar: 'المكتب الميداني الجنوبي', en: 'South Field Office', w: 20 },
-    { id: 'CF', ar: 'المكتب الميداني الأوسط', en: 'Central Field Office', w: 15 },
-    { id: 'EF', ar: 'المكتب الميداني الشرقي', en: 'East Field Office', w: 11 }
+    { id: 'MO', ar: 'المكتب الرئيسي', en: 'Main Office', w: 34, hardship: 'B' },
+    { id: 'NF', ar: 'المكتب الميداني الشمالي', en: 'North Field Office', w: 20, hardship: 'C' },
+    { id: 'SF', ar: 'المكتب الميداني الجنوبي', en: 'South Field Office', w: 20, hardship: 'C' },
+    { id: 'CF', ar: 'المكتب الميداني الأوسط', en: 'Central Field Office', w: 15, hardship: 'B' },
+    { id: 'EF', ar: 'المكتب الميداني الشرقي', en: 'East Field Office', w: 11, hardship: 'C' }
   ];
   const GRANTS = [
     { id: 'GR-101', ar: 'الرعاية الصحية الأولية', en: 'Primary Health Care', donor: { ar: 'المانح أ', en: 'Donor A' }, end: iso(addMonths(today, 14)) },
@@ -136,14 +140,14 @@
     const pos = pick(d[5]);
     let g = SINGLE_GENDER[pos[0]] || (chance(0.52) ? 'F' : 'M');
     const office = d[0] === 'HRM' || d[0] === 'FIN' || d[0] === 'MEL' ? (chance(0.7) ? OFFICES[0] : weighted(officePairs)) : weighted(officePairs);
-    const category = weighted([['REGULAR', 86], ['FIXED_SHORT', 7], ['DAILY', 4], ['INTERN', 3]]);
+    const category = weighted([['REGULAR', 82], ['FIXED_SHORT', 7], ['DAILY', 4], ['INTERN', 3], ['VOLUNTEER', 4]]);
     const serviceDays = category === 'INTERN' ? int(10, 85) : weighted([[int(5, 89), 8], [int(90, 365), 22], [int(366, 1460), 45], [int(1461, 3300), 25]]);
     const hire = addDays(today, -serviceDays);
     const contractMonths = category === 'REGULAR' ? pick([6, 12, 12, 12]) : category === 'INTERN' ? 3 : pick([1, 2, 3]);
     let contractEnd = addMonths(hire, contractMonths);
     while (contractEnd <= today) contractEnd = addMonths(contractEnd, contractMonths);
-    const grade = category === 'INTERN' ? 0 : pos[2];
-    const base = category === 'INTERN' ? 150 : Math.round((GRADE_BASE[grade] * (1 + Math.min(serviceDays / 365, 8) * 0.025) * (0.96 + rnd() * 0.08)) / 5) * 5;
+    const grade = ['INTERN', 'VOLUNTEER'].includes(category) ? 0 : pos[2];
+    const base = category === 'INTERN' ? 150 : category === 'VOLUNTEER' ? 300 : Math.round((GRADE_BASE[grade] * (1 + Math.min(serviceDays / 365, 8) * 0.025) * (0.96 + rnd() * 0.08)) / 5) * 5;
     const primaryGrant = d[4];
     let alloc;
     if (primaryGrant === 'GR-105') alloc = [{ grant: 'GR-105', pct: 100 }];
@@ -176,7 +180,9 @@
       rating: weighted([['OUTSTANDING', 10], ['VERY_GOOD', 30], ['SATISFACTORY', 48], ['NEEDS_IMPROVEMENT', 10], ['UNSATISFACTORY', 2]]),
       phone: `+000 59 ${int(100, 999)} ${int(1000, 9999)}`,
       email: `${name.en.split(' ')[0].toLowerCase()}.${name.en.split(' ').slice(-1)[0].toLowerCase().replace(/[^a-z]/g, '')}${i}@example.org`,
-      managerId: null
+      managerId: null,
+      staffType: chance(0.04) ? 'INTL' : 'NATL',
+      disability: chance(0.025)
     };
     employees.push(emp);
   }
@@ -211,12 +217,23 @@
     managerId: 'E0003'
   });
 
-  // Managers: department heads per dept (first senior found), else the HR manager
+  // Management hierarchy: Country Director → department heads → site supervisors → staff
   const heads = {};
-  employees.forEach((e) => { if (!heads[e.dept] && e.grade >= 6 && e.id !== cd.id) heads[e.dept] = e.id; });
+  const fixed = new Set([cd.id, hrm.id, hmgr.id, me.id]);
+  [7, 5].forEach((g) => employees.forEach((e) => { if (!heads[e.dept] && e.grade >= g && !fixed.has(e.id)) heads[e.dept] = e.id; }));
   heads.HEA = hmgr.id; heads.HRM = hrm.id;
-  employees.forEach((e) => { if (!e.managerId) e.managerId = e.id === heads[e.dept] ? cd.id : (heads[e.dept] || hrm.id); });
-  cd.managerId = null;
+  const groups = {};
+  employees.forEach((e) => { if (!fixed.has(e.id) && e.id !== heads[e.dept]) (groups[e.dept + e.office] = groups[e.dept + e.office] || []).push(e); });
+  Object.values(groups).forEach((g) => {
+    g.sort((a, b) => b.grade - a.grade);
+    const sup = g.length > 3 && g[0].grade >= 3 ? g[0] : null;
+    g.forEach((e) => { e.managerId = sup && e !== sup ? sup.id : (heads[e.dept] || hrm.id); });
+  });
+  Object.values(heads).forEach((id) => { const h = employees.find((x) => x.id === id); if (h && !fixed.has(h.id)) h.managerId = cd.id; });
+  // The health coordinator's own team (the "Line manager" persona)
+  employees.filter((e) => e.dept === 'HEA' && e.office === 'MO' && !fixed.has(e.id) && e.category === 'REGULAR').slice(0, 13).forEach((e) => { e.managerId = hmgr.id; });
+  me.managerId = hmgr.id; hmgr.managerId = cd.id; hrm.managerId = cd.id; cd.managerId = null;
+  Object.assign(cd, { staffType: 'NATL', disability: false }); Object.assign(hrm, { staffType: 'NATL' }); Object.assign(me, { staffType: 'NATL', disability: false });
 
   // A few deliberate cases so dashboards always have something to show
   employees.slice(10, 16).forEach((e, k) => { e.category = 'REGULAR'; e.inProbation = true; e.hireDate = iso(addDays(today, -(80 + k))); e.probationEnd = iso(addDays(today, 10 - k)); });
@@ -266,7 +283,7 @@
   });
   // Guarantee one candidate blocked at screening and one ready for offer (story)
   const c33 = candidates.filter((c) => c.vacancy === 'VAC-033');
-  Object.assign(c33[0], { stage: 'SCREENING', screening: 'PENDING', evals: { submitted: 3, required: 3 }, refs: 2, score: 86 });
+  Object.assign(c33[0], { stage: 'SCREENING', screening: 'PENDING', evals: { submitted: 3, required: 3 }, refs: 2, score: 86, mds: false });
   Object.assign(c33[1], { stage: 'SCREENING', screening: 'CLEARED', evals: { submitted: 3, required: 3 }, refs: 2, score: 81 });
   Object.assign(c33[2], { stage: 'EVALUATION', screening: 'NOT_STARTED', evals: { submitted: 2, required: 3 }, refs: 0, score: 77 });
 
