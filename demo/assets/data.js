@@ -1,4 +1,4 @@
-/* HR Suite demo — synthetic data generator.
+/* HRMO demo — synthetic data generator.
  * Everything here is fictitious. A seeded PRNG makes the dataset identical on every load,
  * while dates are generated relative to "today" so the demo always looks current. */
 (function () {

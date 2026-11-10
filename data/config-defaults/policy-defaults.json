@@ -1,7 +1,7 @@
 {
   "$schemaVersion": "0.1.0",
   "templateName": "Humanitarian NGO — Default Template",
-  "description": "Default policy parameters for HR Suite. Values are examples derived from a reference national-staff policy manual and must be verified by each customer against its own policies and local labor law. Keys map to rule IDs in docs/en/system-reference.md.",
+  "description": "Default policy parameters for HRMO. Values are examples derived from a reference national-staff policy manual and must be verified by each customer against its own policies and local labor law. Keys map to rule IDs in docs/en/system-reference.md.",
   "validFrom": "2026-01-01",
   "validTo": null,
 

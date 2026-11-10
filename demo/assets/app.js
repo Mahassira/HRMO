@@ -1,10 +1,10 @@
-/* HR Suite demo — application (vanilla JS, no dependencies).
+/* HRMO demo — application (vanilla JS, no dependencies).
  * Three workspaces: Employee self-service, HR, Country Director.
  * Business rules reference IDs in docs/en/system-reference.md. */
 (function () {
   'use strict';
   const D = window.HRDATA;
-  const STORE_KEY = 'hrsuite-demo-v2';
+  const STORE_KEY = 'hrmo-demo-v1';
   const DEFAULT_POLICY = JSON.parse(JSON.stringify(D.POLICY));
 
   // ======================================================================
@@ -358,7 +358,7 @@
     <header class="topbar">
       <button class="iconbtn only-sm" data-act="nav-toggle" aria-label="${esc(L('القائمة', 'Menu'))}" aria-expanded="${S.navOpen}">${icon('menu')}</button>
       <button class="iconbtn hide-md" data-act="collapse" aria-label="${esc(L('طي القائمة الجانبية', 'Collapse sidebar'))}" data-tip="${esc(esc(S.collapsed ? L('توسيع القائمة', 'Expand menu') : L('طي القائمة', 'Collapse menu')))}">${icon('panel')}</button>
-      <div class="brand"><span class="logo" aria-hidden="true">HR</span><span>HR Suite</span></div>
+      <div class="brand"><span class="logo" aria-hidden="true">HM</span><span>HRMO</span></div>
       <button class="ws-switch" data-act="menu-ws" aria-haspopup="menu" title="${esc(L('تبديل مساحة العمل', 'Switch workspace'))}">${icon(S.role === 'CD' ? 'chart' : S.role === 'HR' ? 'people' : 'person', 14)}<span class="wl">${esc(roleLabel(S.role))}</span>${icon('down', 12)}</button>
       <span class="demo-pill">${esc(L('بيانات تجريبية', 'Demo data'))}</span>
       <label class="search">${icon('search', 16)}<span class="sr-only">${esc(L('بحث', 'Search'))}</span><input type="search" id="gsearch" placeholder="${esc(L('ابحث عن موظف أو رقم وظيفي…', 'Search employees or staff numbers…'))}" data-act="global-search"><kbd>/</kbd></label>
@@ -528,7 +528,7 @@
       <div class="grid g-21">
         <section class="card"><h2>${esc(L('أيام الشهر', 'Days of the month'))}</h2>
           <div class="cal">${D.POLICY.workWeek.days.length ? DAYNAMES.map((dn) => `<div class="dh">${esc(T(DAYLABEL[dn]))}</div>`).join('') : ''}${cells.join('')}</div>
-          <div class="legend" style="margin-top:10px"><span><i style="background:var(--surface)"></i>${esc(L('يوم عمل', 'Work day'))}</span><span><i style="background:var(--brand-bg)"></i>${esc(L('إجازة معتمدة', 'Approved leave'))}</span><span><i style="background:var(--info-bg)"></i>${esc(L('عطلة رسمية', 'Public holiday'))}</span><span><i style="background:var(--warn-bg)"></i>${esc(L('علامة تأخير', 'Late mark'))} ${rule('WT-012')}</span></div>
+          <div class="legend" style="margin-top:10px"><span><i style="background:var(--surface)"></i>${esc(L('يوم عمل', 'Work day'))}</span><span><i style="background:var(--success-bg)"></i>${esc(L('إجازة معتمدة', 'Approved leave'))}</span><span><i style="background:var(--info-bg)"></i>${esc(L('عطلة رسمية', 'Public holiday'))}</span><span><i style="background:var(--warning-bg)"></i>${esc(L('علامة تأخير', 'Late mark'))} ${rule('WT-012')}</span></div>
         </section>
         <section class="card"><h2>${esc(L('الملخص', 'Summary'))}</h2>
           <dl class="kv"><dt>${esc(L('أيام العمل', 'Work days'))}</dt><dd class="num">${work}</dd><dt>${esc(L('أيام الإجازة', 'Leave days'))}</dt><dd class="num">${lv}</dd><dt>${esc(L('العطل الرسمية', 'Public holidays'))}</dt><dd class="num">${hd}</dd><dt>${esc(L('الساعات', 'Hours'))}</dt><dd class="num">${fmtN(work * D.POLICY.workWeek.hoursPerDay)}</dd><dt>${esc(L('علامات التأخير', 'Late marks'))}</dt><dd class="num">${e.lateMarks} / ${D.POLICY.lateMarksThreshold} ${rule('WT-013')}</dd></dl>
@@ -1011,9 +1011,9 @@
   function channelPreview(kind, from, to, subject, card) {
     const tabs = `<div class="channel-tabs seg" role="group"><button aria-pressed="${S.channel !== 'outlook'}" data-act="channel" data-v="teams">${icon('teams', 14)} Teams</button><button aria-pressed="${S.channel === 'outlook'}" data-act="channel" data-v="outlook">${icon('mail', 14)} Outlook</button></div>`;
     if (S.channel === 'outlook') {
-      return `${tabs}<div class="preview"><div class="chrome">${icon('mail', 14)}<b>Outlook</b> · ${esc(L('البريد الوارد', 'Inbox'))}</div><div class="mail"><div class="mh"><span class="subj">${esc(subject)}</span><span class="subtle">${esc(L(`من: HR Suite نيابة عن ${from}`, `From: HR Suite on behalf of ${from}`))} · ${esc(L(`إلى: ${to}`, `To: ${to}`))}</span></div><div class="mbody2"><span>${esc(L('يمكنك الاعتماد مباشرة من هذه الرسالة:', 'You can act directly from this message:'))}</span>${card}</div></div></div>`;
+      return `${tabs}<div class="preview"><div class="chrome">${icon('mail', 14)}<b>Outlook</b> · ${esc(L('البريد الوارد', 'Inbox'))}</div><div class="mail"><div class="mh"><span class="subj">${esc(subject)}</span><span class="subtle">${esc(L(`من: HRMO نيابة عن ${from}`, `From: HRMO on behalf of ${from}`))} · ${esc(L(`إلى: ${to}`, `To: ${to}`))}</span></div><div class="mbody2"><span>${esc(L('يمكنك الاعتماد مباشرة من هذه الرسالة:', 'You can act directly from this message:'))}</span>${card}</div></div></div>`;
     }
-    return `${tabs}<div class="preview"><div class="chrome">${icon('teams', 14)}<b>Teams</b> · ${esc(L('دردشة مع HR Suite', 'Chat with HR Suite'))}</div><div class="teams-msg"><span class="avatar sm" style="background:var(--brand);color:var(--brand-fg-on)">HR</span><div class="bubble"><div class="meta"><b>HR Suite</b>${esc(L('الآن', 'Now'))}</div>${card}</div></div></div>`;
+    return `${tabs}<div class="preview"><div class="chrome">${icon('teams', 14)}<b>Teams</b> · ${esc(L('دردشة مع HRMO', 'Chat with HRMO'))}</div><div class="teams-msg"><span class="avatar sm" style="background:var(--primary);color:var(--on-primary)">HM</span><div class="bubble"><div class="meta"><b>HRMO</b>${esc(L('الآن', 'Now'))}</div>${card}</div></div></div>`;
   }
   function leavePreview(id) {
     const r = D.leaveRequests.find((x) => x.id === id); const e = empById.get(r.empId); const mgr = empById.get(e.managerId);
@@ -1035,8 +1035,8 @@
   function ackModal(code) {
     const p = D.POLICIES.find((x) => x.code === code);
     return modal(T(p), `<div class="msg info">${icon('doc', 16)}<div>${esc(L('في النسخة الفعلية تُعرض هنا وثيقة السياسة التي رفعتها مؤسستك.', 'In production, your organization\'s uploaded policy document is displayed here.'))}</div></div>
-      <div class="card" style="box-shadow:none;border:1px solid var(--stroke);min-height:120px;display:grid;place-items:center;color:var(--text-3)">${icon('doc', 32)}<span>${esc(`${T(p)} · v${p.v}.pdf`)}</span></div>
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="ack-check" style="accent-color:var(--brand)"> ${esc(L('قرأت السياسة وفهمتها وألتزم بها.', 'I have read, understood and will comply with this policy.'))}</label>`,
+      <div class="card" style="box-shadow:none;border:1px solid var(--border);min-height:120px;display:grid;place-items:center;color:var(--text-3)">${icon('doc', 32)}<span>${esc(`${T(p)} · v${p.v}.pdf`)}</span></div>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="ack-check" style="accent-color:var(--primary)"> ${esc(L('قرأت السياسة وفهمتها وألتزم بها.', 'I have read, understood and will comply with this policy.'))}</label>`,
       `<button class="btn" data-act="close-overlay">${esc(L('لاحقاً', 'Later'))}</button><button class="btn primary" data-act="ack-confirm" data-id="${code}">${esc(L('تأكيد الإقرار', 'Confirm acknowledgement'))}</button>`);
   }
   function activityPanel() {
@@ -1098,7 +1098,7 @@
     document.documentElement.lang = S.lang;
     document.documentElement.dir = S.lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.dataset.theme = S.theme;
-    document.title = `HR Suite — ${roleLabel(S.role)}`;
+    document.title = `HRMO — ${roleLabel(S.role)}`;
     const key = `${S.role}:${S.view[S.role]}`;
     const content = document.getElementById('content');
     const scroll = content && key === lastKey ? content.scrollTop : 0;
@@ -1150,7 +1150,7 @@
   }
   function apDecide(id, status, via) {
     const a = D.approvals.find((x) => x.id === id);
-    a.status = status; a.decidedVia = via || 'HR Suite';
+    a.status = status; a.decidedVia = via || 'HRMO';
     if (a.leaveId) { const r = D.leaveRequests.find((x) => x.id === a.leaveId); if (r) r.status = status === 'APPROVED' ? 'APPROVED' : 'REJECTED'; }
     addActivity('HR', 'outlook', `${status === 'APPROVED' ? 'اعتمد' : 'رفض'} المدير القُطري ${APTYPE[a.type].ar}: ${a.id}`, `Country Director ${status === 'APPROVED' ? 'approved' : 'rejected'} ${APTYPE[a.type].en}: ${a.id}`, a.type === 'HIRE' ? 'recruitment' : 'dashboard');
     S.overlay = null; render();
@@ -1178,7 +1178,7 @@
       case 'lang': S.lang = S.lang === 'ar' ? 'en' : 'ar'; render(); break;
       case 'theme': S.theme = S.theme === 'dark' ? 'light' : 'dark'; render(); break;
       case 'reset': resetDemo(); break;
-      case 'decor': toast(L('هذا جزء من واجهة Teams. HR Suite يعمل كتطبيق داخلها.', 'This is part of Teams. HR Suite runs as an app inside it.')); break;
+      case 'decor': toast(L('هذا جزء من واجهة Teams. HRMO يعمل كتطبيق داخلها.', 'This is part of Teams. HRMO runs as an app inside it.')); break;
       case 'home-app': setView(Object.keys(VIEWS[S.role])[0]); break;
       case 'activity': openOverlay({ type: 'activity' }); break;
       case 'feed': { const a = D.activity.find((x) => x.id === id); if (!S.readActivity.includes(id)) S.readActivity.push(id); if (a && a.go) setView(a.go); break; }
@@ -1315,5 +1315,5 @@
   document.documentElement.lang = S.lang; document.documentElement.dir = S.lang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.dataset.theme = S.theme;
   document.getElementById('app').innerHTML = shell(skeletonHTML());
   setTimeout(render, 350);
-  window.__hrsuite = { S, D, render, validateLeave, balances };
+  window.__hrmo = { S, D, render, validateLeave, balances };
 })();

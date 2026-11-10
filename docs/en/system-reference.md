@@ -1,4 +1,4 @@
-# HR Suite — Functional System Reference
+# HRMO — Functional System Reference
 
 > **Version:** 0.1 (baseline) · **Status:** Draft for review · **Language:** English ([العربية](../ar/system-reference.md))
 >
@@ -9,7 +9,7 @@
 ## 0. About this document
 
 ### 0.1 Purpose
-This document is the **functional reference** for HR Suite, a configurable human-resources management system for humanitarian and non-profit organizations of up to ~800 employees, built on Microsoft Power Platform (Dataverse, Power Apps, Power Automate, Power BI).
+This document is the **functional reference** for HRMO, a configurable human-resources management system for humanitarian and non-profit organizations of up to ~800 employees, built on Microsoft Power Platform (Dataverse, Power Apps, Power Automate, Power BI).
 
 It defines **what the system must do**: business rules, workflows, approvals, forms, notifications and the configuration parameters behind them. Technical design (tables, columns, security roles, flows) is derived from this document in separate design documents.
 

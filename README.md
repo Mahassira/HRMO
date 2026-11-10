@@ -1,10 +1,10 @@
-# HR Suite
+# HRMO
 
 Configurable HR management system for humanitarian and non-profit organizations (up to ~800 employees), designed to run inside **Microsoft Teams and Outlook**.
 
 نظام قابل للتهيئة لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية (حتى نحو 800 موظف)، مصمَّم ليعمل داخل **Microsoft Teams وOutlook**.
 
-![HR Suite — Country Director](docs/images/en-country-director.png)
+![HRMO — Country Director](docs/images/en-country-director.png)
 
 ## Live demo / العرض التفاعلي
 
