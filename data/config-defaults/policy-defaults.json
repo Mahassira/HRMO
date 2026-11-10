@@ -4,11 +4,13 @@
   "description": "Default policy parameters for HRMO. Values are examples derived from a reference national-staff policy manual and must be verified by each customer against its own policies and local labor law. Keys map to rule IDs in docs/en/system-reference.md.",
   "validFrom": "2026-01-01",
   "validTo": null,
-
   "organization": {
     "multiCountry": true,
     "grantAllocationEnabled": true,
-    "languages": ["en", "ar"],
+    "languages": [
+      "en",
+      "ar"
+    ],
     "defaultLanguage": "en",
     "branding": {
       "organizationName": "<Organization name>",
@@ -20,19 +22,33 @@
       "hrContactEmail": "<hr@example.org>"
     }
   },
-
   "countryPolicy": {
     "code": "SAMPLE",
     "name": "Sample Country Policy Set",
-    "currencies": ["USD", "ILS"],
+    "currencies": [
+      "USD",
+      "ILS"
+    ],
     "workWeek": {
-      "days": ["SUN", "MON", "TUE", "WED", "THU"],
+      "days": [
+        "SUN",
+        "MON",
+        "TUE",
+        "WED",
+        "THU"
+      ],
       "hoursPerDay": 8,
       "startTime": "08:00",
       "endTime": "16:00",
       "breaks": [
-        { "type": "LUNCH", "minutes": 30 },
-        { "type": "REST", "minutes": 15 }
+        {
+          "type": "LUNCH",
+          "minutes": 30
+        },
+        {
+          "type": "REST",
+          "minutes": 15
+        }
       ],
       "maxWeeklyHours": 40
     },
@@ -53,7 +69,6 @@
       "courtConviction": true
     }
   },
-
   "employmentCategories": {
     "regular": {
       "key": "REGULAR",
@@ -61,8 +76,14 @@
       "minContractMonths": 3,
       "timeRecording": "MONTHLY_TIMESHEET_AND_DAILY_ATTENDANCE",
       "eligibility": {
-        "annualLeave": true, "sickLeave": true, "otherLeave": true, "overtime": true,
-        "thirteenthMonth": true, "healthInsurance": true, "severance": true, "relocationAllowance": true
+        "annualLeave": true,
+        "sickLeave": true,
+        "otherLeave": true,
+        "overtime": true,
+        "thirteenthMonth": true,
+        "healthInsurance": true,
+        "severance": true,
+        "relocationAllowance": true
       }
     },
     "fixedShort": {
@@ -70,8 +91,14 @@
       "isEmployee": true,
       "timeRecording": "MONTHLY_TIMESHEET",
       "eligibility": {
-        "annualLeave": false, "sickLeave": true, "otherLeave": true, "overtime": true,
-        "thirteenthMonth": false, "healthInsurance": false, "severance": false, "relocationAllowance": false
+        "annualLeave": false,
+        "sickLeave": true,
+        "otherLeave": true,
+        "overtime": true,
+        "thirteenthMonth": false,
+        "healthInsurance": false,
+        "severance": false,
+        "relocationAllowance": false
       }
     },
     "daily": {
@@ -79,8 +106,14 @@
       "isEmployee": true,
       "timeRecording": "DAILY_ATTENDANCE",
       "eligibility": {
-        "annualLeave": false, "sickLeave": false, "otherLeave": false, "overtime": false,
-        "thirteenthMonth": false, "healthInsurance": false, "severance": false, "relocationAllowance": false
+        "annualLeave": false,
+        "sickLeave": false,
+        "otherLeave": false,
+        "overtime": false,
+        "thirteenthMonth": false,
+        "healthInsurance": false,
+        "severance": false,
+        "relocationAllowance": false
       }
     },
     "service": {
@@ -90,8 +123,14 @@
       "paidForObservedHolidays": true,
       "invoiceDeadlineDays": 60,
       "eligibility": {
-        "annualLeave": false, "sickLeave": false, "otherLeave": false, "overtime": false,
-        "thirteenthMonth": false, "healthInsurance": false, "severance": false, "relocationAllowance": false
+        "annualLeave": false,
+        "sickLeave": false,
+        "otherLeave": false,
+        "overtime": false,
+        "thirteenthMonth": false,
+        "healthInsurance": false,
+        "severance": false,
+        "relocationAllowance": false
       }
     },
     "consultant": {
@@ -100,11 +139,20 @@
       "timeRecording": "DELIVERABLES_AND_INVOICE",
       "invoiceDeadlineDays": 60,
       "paymentSlaBusinessDays": 10,
-      "selectionMethods": ["LEAST_COST", "QUALIFICATIONS_BASED"],
+      "selectionMethods": [
+        "LEAST_COST",
+        "QUALIFICATIONS_BASED"
+      ],
       "finalReportRequired": true,
       "eligibility": {
-        "annualLeave": false, "sickLeave": false, "otherLeave": false, "overtime": false,
-        "thirteenthMonth": false, "healthInsurance": false, "severance": false, "relocationAllowance": false
+        "annualLeave": false,
+        "sickLeave": false,
+        "otherLeave": false,
+        "overtime": false,
+        "thirteenthMonth": false,
+        "healthInsurance": false,
+        "severance": false,
+        "relocationAllowance": false
       }
     },
     "intern": {
@@ -120,37 +168,75 @@
       "endEvaluationRequired": true,
       "certificateOnSatisfactoryEvaluation": true,
       "eligibility": {
-        "annualLeave": false, "sickLeave": false, "otherLeave": false, "overtime": false,
-        "thirteenthMonth": false, "healthInsurance": false, "severance": false, "relocationAllowance": false
+        "annualLeave": false,
+        "sickLeave": false,
+        "otherLeave": false,
+        "overtime": false,
+        "thirteenthMonth": false,
+        "healthInsurance": false,
+        "severance": false,
+        "relocationAllowance": false
       }
+    },
+    "volunteer": {
+      "key": "VOLUNTEER",
+      "isEmployee": false,
+      "timeRecording": "DAILY_ATTENDANCE",
+      "monthlyIncentive": 100,
+      "incentiveCurrency": "USD",
+      "eligibility": {
+        "annualLeave": false,
+        "sickLeave": false,
+        "overtime": false,
+        "severance": false,
+        "healthInsurance": false
+      },
+      "reportSeparately": true
     }
   },
-
   "approvals": {
     "delegationEnabled": true,
     "escalationAfterBusinessDays": 3
   },
-
   "recruitment": {
-    "newPositionApprovers": ["HEAD_OF_OFFICE", "FINANCE_DIRECTOR"],
-    "channels": ["WEBSITE", "JOB_BOARDS", "NEWSPAPER", "NGO_NETWORKS"],
+    "newPositionApprovers": [
+      "HEAD_OF_OFFICE",
+      "FINANCE_DIRECTOR"
+    ],
+    "channels": [
+      "WEBSITE",
+      "JOB_BOARDS",
+      "NEWSPAPER",
+      "NGO_NETWORKS"
+    ],
     "allowEmergencyDirectSourcing": true,
     "minimumAge": 18,
     "familyRelationRule": "noDirectReporting",
     "flagBusinessRelatedCandidates": true,
     "flagGovernmentEmployees": true,
-    "panel": { "standardSize": 3, "minSize": 2, "requiredRoles": ["HR_OFFICER", "DEPARTMENT_HEAD"] },
+    "panel": {
+      "standardSize": 3,
+      "minSize": 2,
+      "requiredRoles": [
+        "HR_OFFICER",
+        "DEPARTMENT_HEAD"
+      ]
+    },
     "allowRemoteInterviews": true,
     "reimburseCandidateTravel": false,
     "seniorPositionsRequireHeadInterview": true,
     "hiringAuthority": "HEAD_OF_OFFICE",
-    "references": { "min": 2, "minFromPreviousEmployer": 1, "allowPostHireInEmergency": true },
+    "references": {
+      "min": 2,
+      "minFromPreviousEmployer": 1,
+      "allowPostHireInEmergency": true
+    },
     "internalPreference": true,
     "formerEmployeePreference": true,
     "internalApplicantMustNotifyManager": true,
-    "cvBankRetentionMonths": 24
+    "cvBankRetentionMonths": 24,
+    "misconductDisclosureScreening": true
   },
-
   "onboarding": {
     "orientationWithinDays": 5,
     "mandatoryTrainingFrequency": "monthly",
@@ -164,52 +250,233 @@
       "DATA_PRIVACY_NOTICE"
     ],
     "personnelFileChecklist": [
-      { "code": "ID_DOCUMENT", "required": true, "expires": true },
-      { "code": "CV", "required": true, "expires": false },
-      { "code": "CERTIFICATES", "required": true, "expires": false },
-      { "code": "SIGNED_CONTRACT", "required": true, "expires": false },
-      { "code": "SIGNED_JOB_DESCRIPTION", "required": true, "expires": false },
-      { "code": "INTERVIEW_EVALUATIONS", "required": true, "expires": false },
-      { "code": "REFERENCE_CHECKS", "required": true, "expires": false },
-      { "code": "SCREENING_CLEARANCE", "required": true, "expires": true },
-      { "code": "POLICY_ACKNOWLEDGEMENTS", "required": true, "expires": false },
-      { "code": "BANK_DETAILS", "required": true, "expires": false },
-      { "code": "EMERGENCY_CONTACTS", "required": true, "expires": false },
-      { "code": "DEPENDANTS", "required": false, "expires": false },
-      { "code": "PROFESSIONAL_LICENSE", "required": false, "expires": true }
-    ]
+      {
+        "code": "ID_DOCUMENT",
+        "required": true,
+        "expires": true
+      },
+      {
+        "code": "CV",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "CERTIFICATES",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "SIGNED_CONTRACT",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "SIGNED_JOB_DESCRIPTION",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "INTERVIEW_EVALUATIONS",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "REFERENCE_CHECKS",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "SCREENING_CLEARANCE",
+        "required": true,
+        "expires": true
+      },
+      {
+        "code": "POLICY_ACKNOWLEDGEMENTS",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "BANK_DETAILS",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "EMERGENCY_CONTACTS",
+        "required": true,
+        "expires": false
+      },
+      {
+        "code": "DEPENDANTS",
+        "required": false,
+        "expires": false
+      },
+      {
+        "code": "PROFESSIONAL_LICENSE",
+        "required": false,
+        "expires": true
+      }
+    ],
+    "itAccountsBeforeStart": true
   },
-
   "policyLibrary": {
     "reacknowledgeOnNewVersion": true,
     "driverRulesAcknowledgement": true,
     "defaultPolicies": [
-      { "code": "EMPLOYEE_HANDBOOK", "titleEn": "Employee Handbook", "titleAr": "دليل الموظف", "audience": "ALL", "acknowledgement": true },
-      { "code": "CODE_OF_CONDUCT", "titleEn": "Code of Conduct and Ethics", "titleAr": "مدونة السلوك والأخلاقيات", "audience": "ALL", "acknowledgement": true },
-      { "code": "SAFEGUARDING_PSEA", "titleEn": "Safeguarding / PSEA", "titleAr": "الحماية من الاستغلال والانتهاك الجنسي", "audience": "ALL", "acknowledgement": true },
-      { "code": "ANTI_HARASSMENT", "titleEn": "Anti-Harassment", "titleAr": "مكافحة التحرش", "audience": "ALL", "acknowledgement": true },
-      { "code": "ANTI_FRAUD", "titleEn": "Anti-Fraud", "titleAr": "مكافحة الاحتيال", "audience": "ALL", "acknowledgement": true },
-      { "code": "ANTI_BRIBERY", "titleEn": "Anti-Bribery and Corruption", "titleAr": "مكافحة الرشوة والفساد", "audience": "ALL", "acknowledgement": true },
-      { "code": "ANTI_TRAFFICKING", "titleEn": "Combating Trafficking in Persons", "titleAr": "مكافحة الاتجار بالبشر", "audience": "ALL", "acknowledgement": true },
-      { "code": "WHISTLEBLOWING", "titleEn": "Whistleblowing and Non-Retaliation", "titleAr": "الإبلاغ وعدم الانتقام", "audience": "ALL", "acknowledgement": true },
-      { "code": "CONFLICT_OF_INTEREST", "titleEn": "Conflict of Interest, Gifts and Hospitality", "titleAr": "تضارب المصالح والهدايا والضيافة", "audience": "ALL", "acknowledgement": true },
-      { "code": "CONFIDENTIALITY_NDA", "titleEn": "Confidentiality and Non-Disclosure", "titleAr": "السرية وعدم الإفصاح", "audience": "ALL", "acknowledgement": true },
-      { "code": "DATA_PRIVACY_NOTICE", "titleEn": "Data Protection and Records Retention", "titleAr": "حماية البيانات والاحتفاظ بالسجلات", "audience": "ALL", "acknowledgement": true },
-      { "code": "IT_ACCEPTABLE_USE", "titleEn": "E-mail, Internet and IT Acceptable Use", "titleAr": "الاستخدام المقبول للبريد والإنترنت", "audience": "ALL", "acknowledgement": true },
-      { "code": "SOCIAL_MEDIA", "titleEn": "Social Media Guidelines", "titleAr": "إرشادات وسائل التواصل الاجتماعي", "audience": "ALL", "acknowledgement": false },
-      { "code": "ALCOHOL_DRUGS", "titleEn": "Alcohol and Drug-Free Workplace", "titleAr": "بيئة عمل خالية من الكحول والمخدرات", "audience": "ALL", "acknowledgement": true },
-      { "code": "SMOKING", "titleEn": "Smoking", "titleAr": "التدخين", "audience": "ALL", "acknowledgement": false },
-      { "code": "DRESS_CODE", "titleEn": "Appearance and Dress Code", "titleAr": "المظهر واللباس", "audience": "ALL", "acknowledgement": false },
-      { "code": "MEDIA_RELATIONS", "titleEn": "Media Relations", "titleAr": "التعامل مع الإعلام", "audience": "ALL", "acknowledgement": false },
-      { "code": "BRANDING", "titleEn": "Branding and Visibility", "titleAr": "الهوية والظهور", "audience": "ALL", "acknowledgement": false },
-      { "code": "SAFETY_SECURITY", "titleEn": "Safety, Security and Well-being", "titleAr": "السلامة والأمن والرفاه", "audience": "ALL", "acknowledgement": true },
-      { "code": "VEHICLE_RULES", "titleEn": "Vehicle Operation Rules", "titleAr": "قواعد تشغيل المركبات", "audience": "DRIVERS", "acknowledgement": true },
-      { "code": "EMPLOYMENT_TERMS_STATEMENT", "titleEn": "Employment Terms Statement", "titleAr": "إقرار بشروط التوظيف", "audience": "ALL", "acknowledgement": true }
+      {
+        "code": "EMPLOYEE_HANDBOOK",
+        "titleEn": "Employee Handbook",
+        "titleAr": "دليل الموظف",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "CODE_OF_CONDUCT",
+        "titleEn": "Code of Conduct and Ethics",
+        "titleAr": "مدونة السلوك والأخلاقيات",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "SAFEGUARDING_PSEA",
+        "titleEn": "Safeguarding / PSEA",
+        "titleAr": "الحماية من الاستغلال والانتهاك الجنسي",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "ANTI_HARASSMENT",
+        "titleEn": "Anti-Harassment",
+        "titleAr": "مكافحة التحرش",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "ANTI_FRAUD",
+        "titleEn": "Anti-Fraud",
+        "titleAr": "مكافحة الاحتيال",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "ANTI_BRIBERY",
+        "titleEn": "Anti-Bribery and Corruption",
+        "titleAr": "مكافحة الرشوة والفساد",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "ANTI_TRAFFICKING",
+        "titleEn": "Combating Trafficking in Persons",
+        "titleAr": "مكافحة الاتجار بالبشر",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "WHISTLEBLOWING",
+        "titleEn": "Whistleblowing and Non-Retaliation",
+        "titleAr": "الإبلاغ وعدم الانتقام",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "CONFLICT_OF_INTEREST",
+        "titleEn": "Conflict of Interest, Gifts and Hospitality",
+        "titleAr": "تضارب المصالح والهدايا والضيافة",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "CONFIDENTIALITY_NDA",
+        "titleEn": "Confidentiality and Non-Disclosure",
+        "titleAr": "السرية وعدم الإفصاح",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "DATA_PRIVACY_NOTICE",
+        "titleEn": "Data Protection and Records Retention",
+        "titleAr": "حماية البيانات والاحتفاظ بالسجلات",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "IT_ACCEPTABLE_USE",
+        "titleEn": "E-mail, Internet and IT Acceptable Use",
+        "titleAr": "الاستخدام المقبول للبريد والإنترنت",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "SOCIAL_MEDIA",
+        "titleEn": "Social Media Guidelines",
+        "titleAr": "إرشادات وسائل التواصل الاجتماعي",
+        "audience": "ALL",
+        "acknowledgement": false
+      },
+      {
+        "code": "ALCOHOL_DRUGS",
+        "titleEn": "Alcohol and Drug-Free Workplace",
+        "titleAr": "بيئة عمل خالية من الكحول والمخدرات",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "SMOKING",
+        "titleEn": "Smoking",
+        "titleAr": "التدخين",
+        "audience": "ALL",
+        "acknowledgement": false
+      },
+      {
+        "code": "DRESS_CODE",
+        "titleEn": "Appearance and Dress Code",
+        "titleAr": "المظهر واللباس",
+        "audience": "ALL",
+        "acknowledgement": false
+      },
+      {
+        "code": "MEDIA_RELATIONS",
+        "titleEn": "Media Relations",
+        "titleAr": "التعامل مع الإعلام",
+        "audience": "ALL",
+        "acknowledgement": false
+      },
+      {
+        "code": "BRANDING",
+        "titleEn": "Branding and Visibility",
+        "titleAr": "الهوية والظهور",
+        "audience": "ALL",
+        "acknowledgement": false
+      },
+      {
+        "code": "SAFETY_SECURITY",
+        "titleEn": "Safety, Security and Well-being",
+        "titleAr": "السلامة والأمن والرفاه",
+        "audience": "ALL",
+        "acknowledgement": true
+      },
+      {
+        "code": "VEHICLE_RULES",
+        "titleEn": "Vehicle Operation Rules",
+        "titleAr": "قواعد تشغيل المركبات",
+        "audience": "DRIVERS",
+        "acknowledgement": true
+      },
+      {
+        "code": "EMPLOYMENT_TERMS_STATEMENT",
+        "titleEn": "Employment Terms Statement",
+        "titleAr": "إقرار بشروط التوظيف",
+        "audience": "ALL",
+        "acknowledgement": true
+      }
     ]
   },
-
   "probation": {
-    "appliesTo": ["NEW", "REHIRE", "PROMOTION"],
+    "appliesTo": [
+      "NEW",
+      "REHIRE",
+      "PROMOTION"
+    ],
     "durationMonths": 3,
     "maxExtensions": 1,
     "extensionMonths": 1,
@@ -217,12 +484,25 @@
     "nonSickLeaveAsUnpaid": true,
     "reminderDaysBefore": 14
   },
-
   "lifecycle": {
-    "relocationAllowance": { "enabled": true, "excludeSelfRequested": true, "oneTime": true },
+    "relocationAllowance": {
+      "enabled": true,
+      "excludeSelfRequested": true,
+      "oneTime": true
+    },
     "temporaryTransferMaxMonths": 1,
-    "acting": { "maxMonths": 4, "allowancePercent": 10, "minMonthsForAllowance": 1, "reviewEveryMonths": 3, "extensionApprover": "HEAD_OF_OFFICE" },
-    "contractExpiryReminderDays": [60, 30, 14],
+    "acting": {
+      "maxMonths": 4,
+      "allowancePercent": 10,
+      "minMonthsForAllowance": 1,
+      "reviewEveryMonths": 3,
+      "extensionApprover": "HEAD_OF_OFFICE"
+    },
+    "contractExpiryReminderDays": [
+      60,
+      30,
+      14
+    ],
     "relocatableStaff": {
       "requireJustificationOnRequisition": true,
       "coverRoundTripFromPointOfHire": true,
@@ -230,9 +510,12 @@
       "recoverTravelOnEarlyExit": true
     }
   },
-
   "attendance": {
-    "captureModes": ["SELF", "OFFICER", "IMPORT"],
+    "captureModes": [
+      "SELF",
+      "OFFICER",
+      "IMPORT"
+    ],
     "offlineCapture": true,
     "absenceNotificationCutoff": "09:00",
     "lateGraceMinutes": 0,
@@ -242,99 +525,208 @@
     "deemedResignationEnabled": true,
     "deemedResignationAutomatic": false,
     "maxConsecutiveWorkDays": 10,
-    "flexibleHours": { "enabled": true, "approvers": ["LINE_MANAGER", "SITE_MANAGER"], "makeUpRequired": true }
+    "flexibleHours": {
+      "enabled": true,
+      "approvers": [
+        "LINE_MANAGER",
+        "SITE_MANAGER"
+      ],
+      "makeUpRequired": true
+    }
   },
-
   "overtime": {
     "requiresPreApproval": true,
     "notifyHrBeforeWork": true,
     "rateMultiplier": 1.5,
     "maxHoursPerDay": 2,
-    "compensationModes": ["PAY", "COMP_LEAVE"]
+    "compensationModes": [
+      "PAY",
+      "COMP_LEAVE"
+    ]
   },
-
   "timesheets": {
     "requireGrantAllocation": true,
     "allocationMustTotalPercent": 100,
     "submitOn": "LAST_WORKING_DAY",
     "reminderWorkingDaysBefore": 3,
-    "approvalChain": ["LINE_MANAGER", "HR_OFFICER"],
+    "approvalChain": [
+      "LINE_MANAGER",
+      "HR_OFFICER"
+    ],
     "blockPayWithoutApproval": true,
     "lockAfterApproval": true
   },
-
   "leave": {
-    "defaultApprovalChain": ["LINE_MANAGER", "HR_OFFICER"],
+    "defaultApprovalChain": [
+      "LINE_MANAGER",
+      "HR_OFFICER"
+    ],
     "excludeNonWorkingDays": true,
     "types": {
       "ANNUAL": {
-        "nameEn": "Annual leave", "nameAr": "إجازة سنوية",
-        "entitlementDays": 21, "unit": "WORKING_DAYS", "accrual": "MONTHLY",
-        "minServiceMonths": 3, "proRataOnSeparation": true,
-        "carryOverMaxDays": 0, "payoutOnSeparation": true,
-        "payPercent": 100, "allowRetroactive": false, "noticeBusinessDays": 0
+        "nameEn": "Annual leave",
+        "nameAr": "إجازة سنوية",
+        "entitlementDays": 21,
+        "unit": "WORKING_DAYS",
+        "accrual": "MONTHLY",
+        "minServiceMonths": 3,
+        "proRataOnSeparation": true,
+        "carryOverMaxDays": 0,
+        "payoutOnSeparation": true,
+        "payPercent": 100,
+        "allowRetroactive": false,
+        "noticeBusinessDays": 0
       },
       "SICK": {
-        "nameEn": "Sick leave", "nameAr": "إجازة مرضية",
-        "accrual": "MONTHLY", "period": "CALENDAR_YEAR",
-        "serviceBands": [ { "fromYears": 0, "fullPayDays": 21, "halfPayDays": 21 } ],
-        "notifyWithinHours": 48, "certificateRequiredFromDay": 1,
-        "allowedInProbation": true, "allowRetroactive": true,
-        "carryOver": false, "cashOut": false
+        "nameEn": "Sick leave",
+        "nameAr": "إجازة مرضية",
+        "accrual": "MONTHLY",
+        "period": "CALENDAR_YEAR",
+        "serviceBands": [
+          {
+            "fromYears": 0,
+            "fullPayDays": 21,
+            "halfPayDays": 21
+          }
+        ],
+        "notifyWithinHours": 48,
+        "certificateRequiredFromDay": 1,
+        "allowedInProbation": true,
+        "allowRetroactive": true,
+        "carryOver": false,
+        "cashOut": false
       },
       "BEREAVEMENT": {
-        "nameEn": "Bereavement leave", "nameAr": "إجازة وفاة",
-        "daysPerEvent": 5, "payPercent": 100, "allowRetroactive": true,
-        "relationships": ["PARENT", "SPOUSE", "SIBLING", "CHILD", "PARENT_IN_LAW", "SIBLING_IN_LAW"],
-        "carryOver": false, "cashOut": false
+        "nameEn": "Bereavement leave",
+        "nameAr": "إجازة وفاة",
+        "daysPerEvent": 5,
+        "payPercent": 100,
+        "allowRetroactive": true,
+        "relationships": [
+          "PARENT",
+          "SPOUSE",
+          "SIBLING",
+          "CHILD",
+          "PARENT_IN_LAW",
+          "SIBLING_IN_LAW"
+        ],
+        "carryOver": false,
+        "cashOut": false
       },
       "MATERNITY": {
-        "nameEn": "Maternity leave", "nameAr": "إجازة أمومة",
-        "durationWeeks": 13, "maxPrenatalShare": 0.5, "minServiceDays": 180,
-        "certificateRequired": true, "payPercent": 100, "gender": "F",
-        "carryOver": false, "cashOut": false
+        "nameEn": "Maternity leave",
+        "nameAr": "إجازة أمومة",
+        "durationWeeks": 13,
+        "maxPrenatalShare": 0.5,
+        "minServiceDays": 180,
+        "certificateRequired": true,
+        "payPercent": 100,
+        "gender": "F",
+        "carryOver": false,
+        "cashOut": false
       },
       "NURSING": {
-        "nameEn": "Nursing hour", "nameAr": "ساعة رضاعة",
-        "minutesPerDay": 60, "months": 24, "fullTimeOnly": true, "gender": "F", "payPercent": 100
+        "nameEn": "Nursing hour",
+        "nameAr": "ساعة رضاعة",
+        "minutesPerDay": 60,
+        "months": 24,
+        "fullTimeOnly": true,
+        "gender": "F",
+        "payPercent": 100
       },
       "PATERNITY": {
-        "nameEn": "Paternity leave", "nameAr": "إجازة أبوة",
-        "days": 5, "useWithinWeeks": 4, "categories": ["REGULAR"], "gender": "M", "payPercent": 100,
-        "carryOver": false, "cashOut": false
+        "nameEn": "Paternity leave",
+        "nameAr": "إجازة أبوة",
+        "days": 5,
+        "useWithinWeeks": 4,
+        "categories": [
+          "REGULAR"
+        ],
+        "gender": "M",
+        "payPercent": 100,
+        "carryOver": false,
+        "cashOut": false
       },
       "UNPAID": {
-        "nameEn": "Leave without pay", "nameAr": "إجازة بدون راتب",
-        "minServiceMonths": 6, "maxDaysPerYear": 20, "noticeBusinessDays": 5,
-        "categories": ["REGULAR"], "fullTimeOnly": true, "payPercent": 0,
-        "approvalChain": ["LINE_MANAGER", "SITE_MANAGER", "HR_MANAGER", "HEAD_OF_OFFICE"],
-        "suspendAccruals": true, "continueHealthInsurance": true
+        "nameEn": "Leave without pay",
+        "nameAr": "إجازة بدون راتب",
+        "minServiceMonths": 6,
+        "maxDaysPerYear": 20,
+        "noticeBusinessDays": 5,
+        "categories": [
+          "REGULAR"
+        ],
+        "fullTimeOnly": true,
+        "payPercent": 0,
+        "approvalChain": [
+          "LINE_MANAGER",
+          "SITE_MANAGER",
+          "HR_MANAGER",
+          "HEAD_OF_OFFICE"
+        ],
+        "suspendAccruals": true,
+        "continueHealthInsurance": true
       },
       "COMP": {
-        "nameEn": "Compensatory leave", "nameAr": "إجازة تعويضية",
-        "requiresPriorApproval": true, "expiresAfterDays": 10,
-        "managersExtraordinaryOnly": true, "payPercent": 100, "attachTimesheet": true
+        "nameEn": "Compensatory leave",
+        "nameAr": "إجازة تعويضية",
+        "requiresPriorApproval": true,
+        "expiresAfterDays": 10,
+        "managersExtraordinaryOnly": true,
+        "payPercent": 100,
+        "attachTimesheet": true
       },
       "EXT_TRAINING": {
-        "nameEn": "External training leave", "nameAr": "إجازة تدريب خارجي",
-        "maxDaysPerYear": 5, "onlyIfNotFunded": true, "mustRelateToJob": true, "payPercent": 100
+        "nameEn": "External training leave",
+        "nameAr": "إجازة تدريب خارجي",
+        "maxDaysPerYear": 5,
+        "onlyIfNotFunded": true,
+        "mustRelateToJob": true,
+        "payPercent": 100
       },
       "TRAVEL_DAYS": {
-        "nameEn": "Leave travel days", "nameAr": "أيام سفر الإجازة",
-        "daysEachWay": 2, "appliesTo": "RELOCATABLE", "payPercent": 100
+        "nameEn": "Leave travel days",
+        "nameAr": "أيام سفر الإجازة",
+        "daysEachWay": 2,
+        "appliesTo": "RELOCATABLE",
+        "payPercent": 100
       }
     }
   },
-
   "compensation": {
     "workingDaysPerMonth": 22,
     "payComponents": [
-      { "code": "BASE", "type": "EARNING", "method": "CONTRACT" },
-      { "code": "ACTING_ALLOWANCE", "type": "EARNING", "method": "PERCENT_OF_BASE", "value": 10 },
-      { "code": "OVERTIME", "type": "EARNING", "method": "HOURLY_X_MULTIPLIER" },
-      { "code": "RELOCATION_ALLOWANCE", "type": "EARNING", "method": "FIXED_ONE_TIME" },
-      { "code": "UNPAID_DAYS", "type": "DEDUCTION", "method": "DAILY_RATE_X_DAYS" },
-      { "code": "ADVANCE_RECOVERY", "type": "DEDUCTION", "method": "FIXED" }
+      {
+        "code": "BASE",
+        "type": "EARNING",
+        "method": "CONTRACT"
+      },
+      {
+        "code": "ACTING_ALLOWANCE",
+        "type": "EARNING",
+        "method": "PERCENT_OF_BASE",
+        "value": 10
+      },
+      {
+        "code": "OVERTIME",
+        "type": "EARNING",
+        "method": "HOURLY_X_MULTIPLIER"
+      },
+      {
+        "code": "RELOCATION_ALLOWANCE",
+        "type": "EARNING",
+        "method": "FIXED_ONE_TIME"
+      },
+      {
+        "code": "UNPAID_DAYS",
+        "type": "DEDUCTION",
+        "method": "DAILY_RATE_X_DAYS"
+      },
+      {
+        "code": "ADVANCE_RECOVERY",
+        "type": "DEDUCTION",
+        "method": "FIXED"
+      }
     ],
     "meritIncrease": {
       "minPercent": 1,
@@ -347,11 +739,20 @@
         "minRating": "SATISFACTORY",
         "requiresLineManagerRecommendation": true
       },
-      "approvalChain": ["LINE_MANAGER", "DEPARTMENT_HEAD", "HR_MANAGER", "FINANCE_DIRECTOR", "HEAD_OF_OFFICE"]
+      "approvalChain": [
+        "LINE_MANAGER",
+        "DEPARTMENT_HEAD",
+        "HR_MANAGER",
+        "FINANCE_DIRECTOR",
+        "HEAD_OF_OFFICE"
+      ]
     },
     "performanceBonus": {
       "maxPercentPerYear": 5,
-      "approvalChain": ["LINE_MANAGER", "HEAD_OF_OFFICE"]
+      "approvalChain": [
+        "LINE_MANAGER",
+        "HEAD_OF_OFFICE"
+      ]
     },
     "advances": {
       "personalAdvancesEnabled": true,
@@ -362,120 +763,295 @@
       "deductFromFinalPay": true
     },
     "deductionTypes": [
-      { "code": "UNPAID_ABSENCE" },
-      { "code": "COLLECTIVE_UNAUTHORIZED_ABSENCE", "minPersons": 10, "maxDays": 8 },
-      { "code": "LOSS_DAMAGE_NEGLIGENCE", "requiresProof": true },
-      { "code": "ACCOMMODATION" },
-      { "code": "ADVANCE_RECOVERY" },
-      { "code": "OVERPAYMENT_RECOVERY" },
-      { "code": "INCOME_TAX" },
-      { "code": "COURT_ORDER" },
-      { "code": "APPROVED_SCHEME" },
-      { "code": "PERSONAL_EQUIPMENT_USE" }
+      {
+        "code": "UNPAID_ABSENCE"
+      },
+      {
+        "code": "COLLECTIVE_UNAUTHORIZED_ABSENCE",
+        "minPersons": 10,
+        "maxDays": 8
+      },
+      {
+        "code": "LOSS_DAMAGE_NEGLIGENCE",
+        "requiresProof": true
+      },
+      {
+        "code": "ACCOMMODATION"
+      },
+      {
+        "code": "ADVANCE_RECOVERY"
+      },
+      {
+        "code": "OVERPAYMENT_RECOVERY"
+      },
+      {
+        "code": "INCOME_TAX"
+      },
+      {
+        "code": "COURT_ORDER"
+      },
+      {
+        "code": "APPROVED_SCHEME"
+      },
+      {
+        "code": "PERSONAL_EQUIPMENT_USE"
+      }
     ]
   },
-
   "payroll": {
     "payByDayOfNextMonth": 5,
     "processBeforeWeekendCutoff": true,
     "inputsCutoffDayOfNextMonth": 2,
-    "paymentMethods": ["BANK", "CHEQUE"],
+    "paymentMethods": [
+      "BANK",
+      "CHEQUE"
+    ],
     "payslipQueryWindowBusinessDays": 5,
     "deductionClaimWindowDays": 7,
     "bankChangeRequiresVerification": true,
-    "exportFormats": ["CSV", "XLSX"]
+    "exportFormats": [
+      "CSV",
+      "XLSX"
+    ]
   },
-
   "benefits": {
-    "thirteenthMonth": { "enabled": true, "minContinuousMonths": 12, "amountBasis": "AVERAGE_PRECEDING_YEAR", "subjectToFunds": true, "payAt": "EMPLOYMENT_YEAR_END" },
-    "healthInsurance": { "enabled": true, "subjectToFunds": true, "coverDependants": true },
-    "accidentInsurance": { "enabled": true, "workRelatedOnly": true, "excludeNegligence": true }
+    "thirteenthMonth": {
+      "enabled": true,
+      "minContinuousMonths": 12,
+      "amountBasis": "AVERAGE_PRECEDING_YEAR",
+      "subjectToFunds": true,
+      "payAt": "EMPLOYMENT_YEAR_END"
+    },
+    "healthInsurance": {
+      "enabled": true,
+      "subjectToFunds": true,
+      "coverDependants": true
+    },
+    "accidentInsurance": {
+      "enabled": true,
+      "workRelatedOnly": true,
+      "excludeNegligence": true
+    }
   },
-
   "performance": {
     "cycle": "ANNIVERSARY",
     "graceDays": 30,
     "pauseDuringEmergency": true,
     "interimMinIntervalMonths": 3,
     "ratingScale": [
-      { "value": 1, "code": "UNSATISFACTORY", "en": "Unsatisfactory", "ar": "غير مرضٍ" },
-      { "value": 2, "code": "NEEDS_IMPROVEMENT", "en": "Needs improvement", "ar": "يحتاج إلى تحسين" },
-      { "value": 3, "code": "SATISFACTORY", "en": "Satisfactory", "ar": "مرضٍ" },
-      { "value": 4, "code": "VERY_GOOD", "en": "Very good", "ar": "جيد جداً" },
-      { "value": 5, "code": "OUTSTANDING", "en": "Outstanding", "ar": "متميز" }
+      {
+        "value": 1,
+        "code": "UNSATISFACTORY",
+        "en": "Unsatisfactory",
+        "ar": "غير مرضٍ"
+      },
+      {
+        "value": 2,
+        "code": "NEEDS_IMPROVEMENT",
+        "en": "Needs improvement",
+        "ar": "يحتاج إلى تحسين"
+      },
+      {
+        "value": 3,
+        "code": "SATISFACTORY",
+        "en": "Satisfactory",
+        "ar": "مرضٍ"
+      },
+      {
+        "value": 4,
+        "code": "VERY_GOOD",
+        "en": "Very good",
+        "ar": "جيد جداً"
+      },
+      {
+        "value": 5,
+        "code": "OUTSTANDING",
+        "en": "Outstanding",
+        "ar": "متميز"
+      }
     ],
     "competencies": [
-      "JOB_KNOWLEDGE", "QUANTITY_OF_WORK", "QUALITY_OF_WORK", "TIMELINESS", "COOPERATION",
-      "INITIATIVE", "RELIABILITY", "ATTENDANCE", "JUDGMENT", "CONDUCT", "RESPONSIBILITY", "OBJECTIVES_ACHIEVEMENT"
+      "JOB_KNOWLEDGE",
+      "QUANTITY_OF_WORK",
+      "QUALITY_OF_WORK",
+      "TIMELINESS",
+      "COOPERATION",
+      "INITIATIVE",
+      "RELIABILITY",
+      "ATTENDANCE",
+      "JUDGMENT",
+      "CONDUCT",
+      "RESPONSIBILITY",
+      "OBJECTIVES_ACHIEVEMENT"
     ],
-    "workflow": ["SELF_ASSESSMENT", "LINE_MANAGER", "SECOND_LINE_MANAGER", "HR_REVIEW", "MEETING", "SIGNATURES"],
+    "workflow": [
+      "SELF_ASSESSMENT",
+      "LINE_MANAGER",
+      "SECOND_LINE_MANAGER",
+      "HR_REVIEW",
+      "MEETING",
+      "SIGNATURES"
+    ],
     "allowVerbal": true,
     "disputeEscalationBusinessDays": 7,
-    "objectives": { "framework": "SMART", "reviewEveryMonths": 3, "setAtHire": true },
-    "pip": { "durationWeeks": 4, "thenStartDiscipline": true }
+    "objectives": {
+      "framework": "SMART",
+      "reviewEveryMonths": 3,
+      "setAtHire": true
+    },
+    "pip": {
+      "durationWeeks": 4,
+      "thenStartDiscipline": true
+    }
   },
-
   "learning": {
     "tnaCycle": "ANNUAL",
-    "types": ["INTERNAL", "E_LEARNING", "EXTERNAL", "REFRESHER", "ON_THE_JOB", "EXPOSURE_VISIT", "JOB_ROTATION", "SPECIAL_PROJECT", "UNIVERSITY_COURSE"],
+    "types": [
+      "INTERNAL",
+      "E_LEARNING",
+      "EXTERNAL",
+      "REFRESHER",
+      "ON_THE_JOB",
+      "EXPOSURE_VISIT",
+      "JOB_ROTATION",
+      "SPECIAL_PROJECT",
+      "UNIVERSITY_COURSE"
+    ],
     "learningPlatformUrl": ""
   },
-
   "memberships": {
-    "professionalAssociations": { "enabled": true, "priorApprovalForOfficialPosition": true, "priorApprovalToRepresent": true },
-    "civicOrganizations": { "enabled": true, "socialClubFeesAllowable": false, "lobbyingFeesAllowable": false, "recordUsage": true },
+    "professionalAssociations": {
+      "enabled": true,
+      "priorApprovalForOfficialPosition": true,
+      "priorApprovalToRepresent": true
+    },
+    "civicOrganizations": {
+      "enabled": true,
+      "socialClubFeesAllowable": false,
+      "lobbyingFeesAllowable": false,
+      "recordUsage": true
+    },
     "repayRefundableFeesOnExit": true
   },
-
   "compliance": {
     "screening": {
       "requiredBeforeOffer": true,
-      "appliesTo": ["NEW", "REHIRE", "INTERN", "VOLUNTEER", "CONSULTANT", "TEMPORARY"],
+      "appliesTo": [
+        "NEW",
+        "REHIRE",
+        "INTERN",
+        "VOLUNTEER",
+        "CONSULTANT",
+        "TEMPORARY"
+      ],
       "provider": "MANUAL",
       "rescreenEveryMonths": 12,
-      "resultVisibleTo": ["COMPLIANCE", "HR_MANAGER", "HEAD_OF_OFFICE"]
+      "resultVisibleTo": [
+        "COMPLIANCE",
+        "HR_MANAGER",
+        "HEAD_OF_OFFICE"
+      ]
     },
-    "coi": { "annualDeclaration": true, "reviewer": "HR_MANAGER" },
-    "gifts": { "nominalValueThreshold": 50, "cashGiftsProhibited": true },
+    "coi": {
+      "annualDeclaration": true,
+      "reviewer": "HR_MANAGER"
+    },
+    "gifts": {
+      "nominalValueThreshold": 50,
+      "cashGiftsProhibited": true
+    },
     "drugConvictionSelfReportDays": 5,
     "donorNotificationDays": 10,
     "politicalActivityDeclaration": false,
-    "mandatoryTrainings": ["SAFEGUARDING_PSEA", "ANTI_HARASSMENT", "ANTI_FRAUD", "ANTI_TRAFFICKING", "SAFETY_SECURITY"]
+    "mandatoryTrainings": [
+      "SAFEGUARDING_PSEA",
+      "ANTI_HARASSMENT",
+      "ANTI_FRAUD",
+      "ANTI_TRAFFICKING",
+      "SAFETY_SECURITY"
+    ],
+    "giftThresholdUSD": 50
   },
-
   "discipline": {
     "requireEmployeeResponse": true,
-    "warningApprovers": ["HR_MANAGER", "HEAD_OF_OFFICE"],
+    "warningApprovers": [
+      "HR_MANAGER",
+      "HEAD_OF_OFFICE"
+    ],
     "ladder": [
-      { "step": 1, "code": "COACHING" },
-      { "step": 2, "code": "VERBAL_WARNING" },
-      { "step": 3, "code": "WRITTEN_WARNING_1" },
-      { "step": 4, "code": "WRITTEN_WARNING_2" },
-      { "step": 5, "code": "WRITTEN_WARNING_3" },
-      { "step": 6, "code": "SUSPENSION" },
-      { "step": 7, "code": "DISMISSAL" }
+      {
+        "step": 1,
+        "code": "COACHING"
+      },
+      {
+        "step": 2,
+        "code": "VERBAL_WARNING"
+      },
+      {
+        "step": 3,
+        "code": "WRITTEN_WARNING_1"
+      },
+      {
+        "step": 4,
+        "code": "WRITTEN_WARNING_2"
+      },
+      {
+        "step": 5,
+        "code": "WRITTEN_WARNING_3"
+      },
+      {
+        "step": 6,
+        "code": "SUSPENSION"
+      },
+      {
+        "step": 7,
+        "code": "DISMISSAL"
+      }
     ],
     "suspensionAfterWarnings": 3,
     "windowMonths": 12,
     "maxSuspensionDays": 5,
     "warningValidityMonths": 12,
     "grossMisconductCatalog": [
-      "SERIOUS_NEGLIGENCE", "TIME_RECORD_FALSIFICATION", "CONCEALING_CONTAGIOUS_DISEASE",
-      "ALCOHOL_ON_PREMISES", "DRUG_POSSESSION", "UNDER_INFLUENCE_ON_DUTY", "THEFT_OR_ATTEMPT",
-      "SERIOUS_HARM_TO_ORGANIZATION", "GROSS_INSUBORDINATION", "FIGHTING", "FRAUD", "SEXUAL_EXPLOITATION_ABUSE"
+      "SERIOUS_NEGLIGENCE",
+      "TIME_RECORD_FALSIFICATION",
+      "CONCEALING_CONTAGIOUS_DISEASE",
+      "ALCOHOL_ON_PREMISES",
+      "DRUG_POSSESSION",
+      "UNDER_INFLUENCE_ON_DUTY",
+      "THEFT_OR_ATTEMPT",
+      "SERIOUS_HARM_TO_ORGANIZATION",
+      "GROSS_INSUBORDINATION",
+      "FIGHTING",
+      "FRAUD",
+      "SEXUAL_EXPLOITATION_ABUSE"
     ],
-    "suspension": { "defaultPayPercent": 100 },
-    "suspensionPendingProceedings": { "payPercent": 50, "payBalanceIfNotDismissed": true },
-    "administrativeLeave": { "enabled": true, "payPercent": 50, "maxMonths": 1, "writtenNoticeRequired": true, "benefitsContinue": true, "backPayIfCleared": true },
-    "dismissalApprovalChain": ["LINE_MANAGER", "PROGRAM_COORDINATOR", "HEAD_OF_OFFICE"]
+    "suspension": {
+      "defaultPayPercent": 100
+    },
+    "suspensionPendingProceedings": {
+      "payPercent": 50,
+      "payBalanceIfNotDismissed": true
+    },
+    "administrativeLeave": {
+      "enabled": true,
+      "payPercent": 50,
+      "maxMonths": 1,
+      "writtenNoticeRequired": true,
+      "benefitsContinue": true,
+      "backPayIfCleared": true
+    },
+    "dismissalApprovalChain": [
+      "LINE_MANAGER",
+      "PROGRAM_COORDINATOR",
+      "HEAD_OF_OFFICE"
+    ]
   },
-
   "grievance": {
     "escalationBusinessDays": 7,
     "routeToHqIfHeadIsSubject": true,
     "nonRetaliationWatchMonths": 12
   },
-
   "security": {
     "operationalSuspension": {
       "maxMonths": 2,
@@ -486,17 +1062,25 @@
       "informStaffInAdvance": true
     }
   },
-
   "travel": {
-    "approvalChain": ["LINE_MANAGER", "SECURITY_FOCAL"],
+    "approvalChain": [
+      "LINE_MANAGER",
+      "SECURITY_FOCAL"
+    ],
     "tripReportRequired": true,
     "perDiem": {
       "currency": "USD",
       "minHoursWithoutOvernight": 8,
       "reviewEveryMonths": 12,
       "rates": [
-        { "locationGroup": "DOMESTIC_STANDARD", "perNight": 35 },
-        { "locationGroup": "DOMESTIC_HIGH_COST", "perNight": 50 }
+        {
+          "locationGroup": "DOMESTIC_STANDARD",
+          "perNight": 35
+        },
+        {
+          "locationGroup": "DOMESTIC_HIGH_COST",
+          "perNight": 50
+        }
       ]
     },
     "accommodation": {
@@ -504,8 +1088,14 @@
       "aboveLimitRequiresApproval": true,
       "aboveLimitApprover": "HEAD_OF_OFFICE"
     },
-    "nonReimbursable": ["TIPS", "PORTERS"],
-    "meetingExpenseApprovers": ["FINANCE_DIRECTOR", "HEAD_OF_OFFICE"],
+    "nonReimbursable": [
+      "TIPS",
+      "PORTERS"
+    ],
+    "meetingExpenseApprovers": [
+      "FINANCE_DIRECTOR",
+      "HEAD_OF_OFFICE"
+    ],
     "receiptsRequired": true,
     "recoverMissedTickets": true,
     "ticketChangeLockHours": 48,
@@ -515,17 +1105,20 @@
       "externalInternetRequiresPriorApproval": true
     }
   },
-
   "assets": {
     "inventoryReviewsPerYear": 2,
-    "incidentNotifyRoles": ["LINE_MANAGER", "HEAD_OF_OFFICE", "SECURITY_FOCAL"],
+    "incidentNotifyRoles": [
+      "LINE_MANAGER",
+      "HEAD_OF_OFFICE",
+      "SECURITY_FOCAL"
+    ],
     "restitutionOnGrossNegligence": true
   },
-
   "operations": {
-    "visitorLog": { "enabled": false }
+    "visitorLog": {
+      "enabled": false
+    }
   },
-
   "separation": {
     "resignationNoticeDays": 30,
     "probationNoticeDays": 0,
@@ -534,49 +1127,245 @@
       "payInLieuAllowed": true,
       "payRemainingContract": false,
       "exploreAlternativePositions": true,
-      "selectionCriteria": ["DISCIPLINARY_RECORD", "PERFORMANCE", "LENGTH_OF_SERVICE", "SITE_ASSIGNMENT"]
+      "selectionCriteria": [
+        "DISCIPLINARY_RECORD",
+        "PERFORMANCE",
+        "LENGTH_OF_SERVICE",
+        "SITE_ASSIGNMENT"
+      ]
     },
-    "exitInterview": { "enabled": true },
+    "exitInterview": {
+      "enabled": true
+    },
     "exitEvaluationDays": 5,
-    "rehireEligibilityOptions": ["YES", "NO", "CONDITIONAL"],
-    "clearanceDepartments": ["LOGISTICS", "HR", "FINANCE"],
+    "rehireEligibilityOptions": [
+      "YES",
+      "NO",
+      "CONDITIONAL"
+    ],
+    "clearanceDepartments": [
+      "LOGISTICS",
+      "HR",
+      "FINANCE"
+    ],
     "blockFinalPayUntilCleared": true
   },
-
+  "managerWorkspace": {
+    "deriveFromReportingLine": true,
+    "bulkApproveTimesheets": true,
+    "calendarShowsPending": true,
+    "hideSensitive": true
+  },
+  "dutyOfCare": {
+    "channels": [
+      "TEAMS",
+      "EMAIL",
+      "SMS"
+    ],
+    "escalateAfterMinutes": 60,
+    "requireEmergencyContact": true
+  },
+  "wellbeing": {
+    "rrEveryWeeks": 8,
+    "rrDays": 5,
+    "rrAppliesToHardshipLevels": [
+      "B",
+      "C"
+    ],
+    "burnoutNoLeaveMonths": 6,
+    "hardshipPercent": {
+      "A": 0,
+      "B": 10,
+      "C": 20
+    },
+    "confidentialSupportRecipient": "STAFF_CARE_FOCAL_POINT"
+  },
+  "licenses": {
+    "requiredFor": [
+      "DOCTOR",
+      "NURSE",
+      "MIDWIFE",
+      "PHARMACIST",
+      "LAB_TECHNICIAN",
+      "DRIVER"
+    ],
+    "alertDays": 60,
+    "blockOnExpiry": true
+  },
+  "helpdesk": {
+    "slaBusinessDays": 3,
+    "categories": [
+      "LEAVE",
+      "PAY",
+      "BENEFITS",
+      "CONTRACT",
+      "LETTERS",
+      "OTHER"
+    ],
+    "redirectCategories": [
+      "HARASSMENT",
+      "FRAUD",
+      "SAFEGUARDING"
+    ],
+    "publishFaq": true
+  },
+  "positionControl": {
+    "requireFunding": true,
+    "grantEndAlertDays": 90,
+    "approver": "CD"
+  },
+  "surge": {
+    "deployWithinHours": 72,
+    "readinessCriteria": [
+      "AVAILABLE",
+      "SECURITY_TRAINING_VALID",
+      "MEDICAL_CLEARANCE"
+    ],
+    "requiresManagerRelease": true
+  },
+  "metrics": {
+    "provisionFrequency": "MONTHLY",
+    "exportFormats": [
+      "XLSX",
+      "CSV"
+    ]
+  },
+  "diversity": {
+    "leadershipMinGrade": 8,
+    "minGroupSize": 5,
+    "selfDeclared": true
+  },
   "records": {
     "personalDataUpdateDays": 30,
     "retentionSchedule": [
-      { "recordType": "PERSONNEL_FILE", "trigger": "TERMINATION", "years": 7, "action": "REVIEW_THEN_DELETE" },
-      { "recordType": "PAYROLL_INPUTS", "trigger": "PAY_PERIOD_END", "years": 7, "action": "ARCHIVE" },
-      { "recordType": "TIMESHEET", "trigger": "GRANT_CLOSE", "years": 7, "action": "ARCHIVE" },
-      { "recordType": "CANDIDATE_NOT_HIRED", "trigger": "VACANCY_CLOSE", "years": 2, "action": "DELETE" },
-      { "recordType": "SCREENING_RESULT", "trigger": "TERMINATION", "years": 7, "action": "REVIEW_THEN_DELETE" },
-      { "recordType": "DISCIPLINARY_CASE", "trigger": "CASE_CLOSE", "years": 7, "action": "REVIEW_THEN_DELETE" },
-      { "recordType": "MEDICAL_CERTIFICATE", "trigger": "LEAVE_END", "years": 3, "action": "DELETE" }
+      {
+        "recordType": "PERSONNEL_FILE",
+        "trigger": "TERMINATION",
+        "years": 7,
+        "action": "REVIEW_THEN_DELETE"
+      },
+      {
+        "recordType": "PAYROLL_INPUTS",
+        "trigger": "PAY_PERIOD_END",
+        "years": 7,
+        "action": "ARCHIVE"
+      },
+      {
+        "recordType": "TIMESHEET",
+        "trigger": "GRANT_CLOSE",
+        "years": 7,
+        "action": "ARCHIVE"
+      },
+      {
+        "recordType": "CANDIDATE_NOT_HIRED",
+        "trigger": "VACANCY_CLOSE",
+        "years": 2,
+        "action": "DELETE"
+      },
+      {
+        "recordType": "SCREENING_RESULT",
+        "trigger": "TERMINATION",
+        "years": 7,
+        "action": "REVIEW_THEN_DELETE"
+      },
+      {
+        "recordType": "DISCIPLINARY_CASE",
+        "trigger": "CASE_CLOSE",
+        "years": 7,
+        "action": "REVIEW_THEN_DELETE"
+      },
+      {
+        "recordType": "MEDICAL_CERTIFICATE",
+        "trigger": "LEAVE_END",
+        "years": 3,
+        "action": "DELETE"
+      }
     ],
     "conflictRule": "LONGER_WINS",
     "legalHoldSuspendsDisposal": true
   },
-
   "roles": [
-    { "key": "EMPLOYEE", "en": "Employee", "ar": "موظف" },
-    { "key": "LINE_MANAGER", "en": "Line manager", "ar": "المدير المباشر" },
-    { "key": "SECOND_LINE_MANAGER", "en": "Second-line manager", "ar": "المشرف الثاني" },
-    { "key": "DEPARTMENT_HEAD", "en": "Head of department", "ar": "رئيس القسم" },
-    { "key": "SITE_MANAGER", "en": "Site manager", "ar": "مدير الموقع" },
-    { "key": "PROGRAM_COORDINATOR", "en": "Program / field coordinator", "ar": "منسق البرنامج / الميدان" },
-    { "key": "HR_OFFICER", "en": "HR officer", "ar": "مسؤول الموارد البشرية" },
-    { "key": "HR_MANAGER", "en": "HR manager", "ar": "مدير الموارد البشرية" },
-    { "key": "FINANCE", "en": "Finance", "ar": "المالية" },
-    { "key": "FINANCE_DIRECTOR", "en": "Finance & admin director", "ar": "المدير المالي والإداري" },
-    { "key": "LOGISTICS", "en": "Logistics", "ar": "اللوجستيات" },
-    { "key": "SECURITY_FOCAL", "en": "Security focal point", "ar": "مسؤول الأمن" },
-    { "key": "COMPLIANCE", "en": "Compliance officer", "ar": "مسؤول الامتثال" },
-    { "key": "HEAD_OF_OFFICE", "en": "Head of office", "ar": "رئيس المكتب" },
-    { "key": "HQ_HR", "en": "HQ / regional HR", "ar": "الموارد البشرية في المقر" },
-    { "key": "SYSTEM_ADMIN", "en": "System administrator", "ar": "مسؤول النظام" }
+    {
+      "key": "EMPLOYEE",
+      "en": "Employee",
+      "ar": "موظف"
+    },
+    {
+      "key": "LINE_MANAGER",
+      "en": "Line manager",
+      "ar": "المدير المباشر"
+    },
+    {
+      "key": "SECOND_LINE_MANAGER",
+      "en": "Second-line manager",
+      "ar": "المشرف الثاني"
+    },
+    {
+      "key": "DEPARTMENT_HEAD",
+      "en": "Head of department",
+      "ar": "رئيس القسم"
+    },
+    {
+      "key": "SITE_MANAGER",
+      "en": "Site manager",
+      "ar": "مدير الموقع"
+    },
+    {
+      "key": "PROGRAM_COORDINATOR",
+      "en": "Program / field coordinator",
+      "ar": "منسق البرنامج / الميدان"
+    },
+    {
+      "key": "HR_OFFICER",
+      "en": "HR officer",
+      "ar": "مسؤول الموارد البشرية"
+    },
+    {
+      "key": "HR_MANAGER",
+      "en": "HR manager",
+      "ar": "مدير الموارد البشرية"
+    },
+    {
+      "key": "FINANCE",
+      "en": "Finance",
+      "ar": "المالية"
+    },
+    {
+      "key": "FINANCE_DIRECTOR",
+      "en": "Finance & admin director",
+      "ar": "المدير المالي والإداري"
+    },
+    {
+      "key": "LOGISTICS",
+      "en": "Logistics",
+      "ar": "اللوجستيات"
+    },
+    {
+      "key": "SECURITY_FOCAL",
+      "en": "Security focal point",
+      "ar": "مسؤول الأمن"
+    },
+    {
+      "key": "COMPLIANCE",
+      "en": "Compliance officer",
+      "ar": "مسؤول الامتثال"
+    },
+    {
+      "key": "HEAD_OF_OFFICE",
+      "en": "Head of office",
+      "ar": "رئيس المكتب"
+    },
+    {
+      "key": "HQ_HR",
+      "en": "HQ / regional HR",
+      "ar": "الموارد البشرية في المقر"
+    },
+    {
+      "key": "SYSTEM_ADMIN",
+      "en": "System administrator",
+      "ar": "مسؤول النظام"
+    }
   ],
-
   "documents": {
     "templates": {
       "offerLetter": "templates/offer-letter.docx",
