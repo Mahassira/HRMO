@@ -212,6 +212,7 @@ resource link 'Microsoft.Web/staticSites/linkedBackends@2023-12-01' = if (static
   properties: { backendResourceId: api.id, region: location }
 }
 
+output webName string = web.name
 output webUrl string = 'https://${web.properties.defaultHostname}'
 output apiName string = api.name
 output sqlServer string = sql.properties.fullyQualifiedDomainName

@@ -82,7 +82,7 @@ flowchart LR
 3. <span dir="ltr">`az deployment group create -g <resource-group> -f infra/main.bicep -p infra/main.parameters.json`</span>
 4. الاتصال بالقاعدة كعضو في مجموعة المسؤولين، وتشغيل `db/schema.sql`، ثم إنشاء مستخدم الواجهة البرمجية (الخطوة 0 في الملف).
 5. تسجيل تطبيق HRMO في Entra ID (مستأجر واحد، النطاق `access_as_user`) ومنح موافقة المسؤول.
-6. نشر الواجهة والواجهة البرمجية من GitHub Actions (يُضاف في المرحلة الثانية).
+6. ربط GitHub بـ Azure وتشغيل سير العمل **Deploy to Azure**: انظر [azure-setup.md](azure-setup.md). الخطوات 1 إلى 3 تصبح آلية.
 7. نشر حزمة تطبيق Teams في كتالوج تطبيقات المؤسسة (المرحلة الثالثة).
 
 ## 6. المراحل
