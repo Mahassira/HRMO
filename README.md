@@ -64,13 +64,18 @@ Every rule shown in the demo (e.g. `LV-062`) links back to a rule ID in the syst
 
 ```
 demo/              interactive demo (GitHub Pages) — no dependencies
-docs/              functional reference (en/ar) + screenshots
+docs/              functional reference + production architecture (en/ar) + screenshots
 data/              policy defaults
+infra/             Azure infrastructure template (Bicep)
+db/                core database schema (Azure SQL, row-level security)
+api/               API contract (OpenAPI)
 .github/workflows  Pages deployment
 ```
 
-Planned: production Teams/Outlook app package, backend, and schema scripts.
-مخطط لاحقاً: حزمة تطبيق Teams/Outlook للإنتاج، والخادم، وسكربتات قاعدة البيانات.
+### Production / التشغيل الفعلي
+The production design runs in the customer's own Azure subscription with Microsoft Entra ID sign-in: [architecture (EN)](docs/en/architecture.md) · [المعمارية (AR)](docs/ar/architecture.md). Phase 1 (infrastructure template, schema, API contract) is in this repository; the API implementation is next.
+
+تصميم التشغيل الفعلي يعمل داخل اشتراك Azure الخاص بالمؤسسة بدخول Microsoft Entra ID. المرحلة الأولى (قالب البنية والمخطط وعقد الواجهة البرمجية) موجودة في المستودع، وتنفيذ الواجهة البرمجية هو التالي.
 
 ---
 *Microsoft, Teams and Outlook are trademarks of Microsoft. This project is not affiliated with or endorsed by Microsoft.*
