@@ -89,6 +89,7 @@ Every request reaches its approver as a card in Teams and Outlook. The card show
 | System reference: every rule and setting | [system-reference.md](docs/en/system-reference.md) | [system-reference.md](docs/ar/system-reference.md) |
 | Architecture on Azure | [architecture.md](docs/en/architecture.md) | [architecture.md](docs/ar/architecture.md) |
 | Deployment guide | [azure-setup.md](docs/en/azure-setup.md) | [azure-setup.md](docs/ar/azure-setup.md) |
+| Data pipeline, warehouse and data quality | [data-pipeline.md](docs/en/data-pipeline.md) | [data-pipeline.md](docs/ar/data-pipeline.md) |
 | Default policy set | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
 
 Default policy values are examples. Each organization reviews them against its own policies and local labor law.
@@ -173,6 +174,7 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 | المرجع الوظيفي: كل القواعد والإعدادات | [system-reference.md](docs/ar/system-reference.md) | [system-reference.md](docs/en/system-reference.md) |
 | المعمارية على Azure | [architecture.md](docs/ar/architecture.md) | [architecture.md](docs/en/architecture.md) |
 | دليل النشر | [azure-setup.md](docs/ar/azure-setup.md) | [azure-setup.md](docs/en/azure-setup.md) |
+| مسار البيانات والمستودع وجودة البيانات | [data-pipeline.md](docs/ar/data-pipeline.md) | [data-pipeline.md](docs/en/data-pipeline.md) |
 | مجموعة السياسات الافتراضية | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
 
 القيم الافتراضية للسياسات أمثلة، وتراجعها كل مؤسسة حسب سياساتها وقانون العمل المحلي.
