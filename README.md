@@ -2,80 +2,182 @@
 
 # HRMO
 
-Configurable HR management system for humanitarian and non-profit organizations. Built on **Microsoft Azure** and runs entirely within the Microsoft ecosystem.
+**English** · [العربية](#العربية)
 
-نظام قابل للتهيئة لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. مبني على **Microsoft Azure** ويعمل داخل نظام مايكروسوفت بالكامل.
+HRMO is a configurable human resources management system for humanitarian and non-profit organizations. It is built on Microsoft Azure and runs entirely within the Microsoft ecosystem: staff sign in with their work account and use it from the browser, Microsoft Teams and Outlook.
 
 ![HRMO — Country Director](docs/images/en-country-director.png)
 
-## Live demo / العرض التفاعلي
+## Why HRMO
 
-The demo in [`demo/`](demo/) runs entirely on GitHub Pages with fictitious data for 800 employees. No server, no sign-in.
+Humanitarian organizations manage staff across field offices, grants and hardship locations, under donor rules and local labor law. HRMO puts the whole employee lifecycle in one place and applies the organization's own policies automatically, so that every request is checked the same way and every decision is recorded.
 
-نسخة العرض في مجلد `demo/` تعمل بالكامل على GitHub Pages ببيانات وهمية لـ 800 موظف، دون خادم أو تسجيل دخول.
+- **Policy-driven.** Leave entitlements, notice periods, approval levels, probation, overtime and every other rule are settings, not code. Each organization, and each country office, has its own policy set.
+- **Built for the field.** Grants and funding lines, hardship duty stations, rest and recuperation, staff safety check-ins and emergency surge rosters are part of the system.
+- **Inside Microsoft.** Sign-in, approvals in Teams and Outlook, documents and data all stay within the organization's Microsoft environment.
+- **Arabic and English.** Full right-to-left support, on desktop and phone.
 
-| Workspace / الواجهة | What it shows / ما تعرضه |
+## Who uses it
+
+| Workspace | What it covers |
 |---|---|
-| **Employee** / الموظف | Leave with instant policy checks, timesheets with grant allocation, overtime, payslips, letters (salary, experience, embassy), performance self-assessment and objectives, learning, travel requests, equipment, declarations (conflict of interest, gifts), HR helpdesk, wellbeing and confidential support, safety check-in replies, resignation |
-| **Line manager** / المدير المباشر | Team overview, one approvals inbox (leave, timesheets, overtime, travel, appraisals), team leave calendar, performance reviews and improvement plans, org chart |
-| **HR** / الموارد البشرية | Dashboard and HR metrics, 800-employee directory, onboarding checklists, changes of status, separations with clearance and final settlement, positions and budget, leave and attendance, recruitment with mandatory gates (incl. misconduct disclosure screening), performance cycle, learning and training needs, staff safety check-ins, wellbeing (R&R, burnout watch, hardship), professional licences, letters, helpdesk, disciplinary and grievance cases with warning ladder, declarations, travel and security clearance, assets, emergency surge roster, audit log, **live policy settings** |
-| **Country Director** / المدير القُطري | Executive dashboard (payroll cost by grant, funding risk, turnover, end-of-service and leave liabilities, diversity and localization), approvals with automatic policy checks (hires, changes of status, sanctions, positions), staff safety, workforce analytics |
+| **Employee** | Leave requests with instant policy checks, timesheets with grant allocation, overtime, payslips, letters and certificates, performance and objectives, learning, travel, equipment, declarations, HR helpdesk, wellbeing and confidential support |
+| **Line manager** | Team overview, one inbox for all approvals, team leave calendar, performance reviews and improvement plans, organization chart |
+| **HR** | Employee directory, recruitment, onboarding, changes of status, separations and final settlement, positions and budget, leave and attendance, performance cycle, learning, staff safety, wellbeing, professional licences, cases and grievances, travel, assets, audit log and policy settings |
+| **Country Director** | Executive dashboard, approvals, workforce cost by grant, funding risk, liabilities, diversity and localization, staff safety |
 
-Approvals are shown as they arrive in **Teams chat** and **Outlook** as actionable cards. The demo supports Arabic (RTL) and English, light and dark themes, and phone screens.
+## Modules
 
-تظهر الموافقات كما تصل في **دردشة Teams** و**Outlook** كبطاقات تفاعلية. يدعم العرض العربية والإنجليزية، والوضعين الفاتح والداكن، وشاشات الهاتف.
+**Employee lifecycle**
+- Recruitment with mandatory steps: funded position, panel evaluation, reference checks, compliance and misconduct screening
+- Onboarding checklists, probation follow-up and contract renewals
+- Changes of status: promotion, transfer, salary and funding changes, with approval
+- Separation: resignation, clearance by department, final settlement and exit evaluation
 
-### Design system / نظام التصميم
-A clean, information-dense enterprise design system defined by central tokens in [`demo/assets/styles.css`](demo/assets/styles.css): colors (primary `#2878D0`, navy `#1F2937`, background `#F5F7FA`), typography (Inter / IBM Plex Sans Arabic), 4px spacing grid, radius, elevation, component dimensions, icon sizes and interaction states. Components include a top bar with workspace switcher, notifications, help, preferences and user menu; a collapsible grouped sidebar with sub-menus; breadcrumbs; data tables with sorting, multi-select, bulk actions, row menus and pagination; confirmation dialogs, toasts, tooltips, toggles, radios, date pickers, empty states and loading skeletons.
+**Time and pay**
+- Leave of all types, with balances, carry-over and holiday calendars
+- Daily attendance, monthly timesheets split by grant, overtime
+- Payslips and validated payroll inputs for the finance system
 
-نظام تصميم مؤسسي واضح وكثيف المعلومات، معرَّف بمتغيرات مركزية: الألوان والخطوط والمسافات والزوايا والظلال وأبعاد المكونات وأحجام الأيقونات وحالات التفاعل.
+**Performance and learning**
+- Annual and probation appraisals, objectives and improvement plans
+- Training catalogue, mandatory courses and training needs
 
-### Publish the demo / نشر العرض
-1. Push this repository to GitHub. / ارفع المستودع إلى GitHub.
-2. The workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) copies `demo/` to the `gh-pages` branch on every push to `main` (or run it manually from **Actions → Publish demo → Run workflow**). / يُنسخ مجلد `demo/` تلقائياً إلى فرع `gh-pages`.
-3. **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)` → Save** (one time). / مرة واحدة فقط.
+**Duty of care**
+- Safety check-ins after an incident, with live headcount by office
+- Rest and recuperation, burnout watch and hardship allowance
+- Confidential psychosocial support requests
+- Professional licence tracking for medical and technical staff
 
-To run locally, open `demo/index.html` in a browser. / للتشغيل محلياً افتح `demo/index.html` في المتصفح.
+**Employee relations**
+- Disciplinary cases with a warning ladder and expiry dates
+- Grievances with escalation deadlines
+- Conflict of interest and gift declarations
+- HR helpdesk with response targets
+
+**Organization**
+- Positions and budget against grants
+- Organization chart, travel and security clearance, assets
+- Emergency surge roster
+- HR indicators and reports for management and donors
+
+## Approvals in Teams and Outlook
+
+Every request reaches its approver as a card in Teams and Outlook. The card shows the request, the result of the policy checks and the approve and reject buttons, so a manager can decide without opening the system. Each decision is recorded with who made it, when and from where.
+
+![Approval card in Teams](docs/images/en-teams-card.png)
+
+## Security and privacy
+
+- Data stays in the organization's own Azure subscription, in the region it chooses.
+- Sign-in uses Microsoft Entra ID, so the organization's own security rules apply.
+- Each person sees only what their role allows: employees see their own record, managers see their team, and salary and private data are restricted to HR and management.
+- Every change keeps its history, and the audit log cannot be edited.
+- Reports of harassment, fraud and safeguarding are not collected in the system. Staff are directed to the organization's independent reporting channel.
+
+## Screens
 
 | | |
 |---|---|
 | ![Employee](docs/images/ar-employee.png) | ![HR](docs/images/ar-hr.png) |
-| ![Teams card](docs/images/en-teams-card.png) | ![Country Director](docs/images/ar-country-director.png) |
 | ![Line manager](docs/images/en-manager.png) | ![Staff safety](docs/images/ar-safety.png) |
 
-## Documentation / التوثيق
+## Documentation
 
 | | English | العربية |
 |---|---|---|
-| Functional system reference / المرجع الوظيفي | [docs/en/system-reference.md](docs/en/system-reference.md) | [docs/ar/system-reference.md](docs/ar/system-reference.md) |
+| System reference: every rule and setting | [system-reference.md](docs/en/system-reference.md) | [system-reference.md](docs/ar/system-reference.md) |
+| Architecture on Azure | [architecture.md](docs/en/architecture.md) | [architecture.md](docs/ar/architecture.md) |
+| Deployment guide | [azure-setup.md](docs/en/azure-setup.md) | [azure-setup.md](docs/ar/azure-setup.md) |
+| Default policy set | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
 
-Every rule shown in the demo (e.g. `LV-062`) links back to a rule ID in the system reference. / كل قاعدة تظهر في العرض (مثل `LV-062`) مرتبطة بمعرّف في المرجع الوظيفي.
-
-## Configuration / الإعداد
-
-[`data/config-defaults/policy-defaults.json`](data/config-defaults/policy-defaults.json) is the default policy template. Every key maps to a rule ID in the system reference.
-
-القالب الافتراضي للسياسات، وكل مفتاح فيه مرتبط بمعرّف قاعدة في المرجع.
-
-> Default values are examples and must be verified against each customer's policies and local labor law.
-> القيم الافتراضية أمثلة، ويجب مطابقتها مع سياسات كل عميل وقانون العمل المحلي.
-
-## Repository structure / هيكل المستودع
-
-```
-demo/              interactive demo (GitHub Pages) — no dependencies
-docs/              functional reference + production architecture (en/ar) + screenshots
-data/              policy defaults
-infra/             Azure infrastructure template (Bicep)
-db/                core database schema (Azure SQL, row-level security)
-api/               API contract (OpenAPI)
-.github/workflows  Pages deployment
-```
-
-### Production / التشغيل الفعلي
-The production design runs in the customer's own Azure subscription with Microsoft Entra ID sign-in: [architecture (EN)](docs/en/architecture.md) · [المعمارية (AR)](docs/ar/architecture.md). Phase 1 (infrastructure template, schema, API contract) is in this repository; the API implementation is next.
-
-تصميم التشغيل الفعلي يعمل داخل اشتراك Azure الخاص بالمؤسسة بدخول Microsoft Entra ID. المرحلة الأولى (قالب البنية والمخطط وعقد الواجهة البرمجية) موجودة في المستودع، وتنفيذ الواجهة البرمجية هو التالي.
+Default policy values are examples. Each organization reviews them against its own policies and local labor law.
 
 ---
-*Microsoft, Teams and Outlook are trademarks of Microsoft. This project is not affiliated with or endorsed by Microsoft.*
+
+<div dir="rtl">
+
+## العربية
+
+HRMO نظام قابل للتهيئة لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. مبني على Microsoft Azure ويعمل داخل نظام مايكروسوفت بالكامل: يدخل الموظف بحساب العمل ويستخدم النظام من المتصفح ومن Microsoft Teams وOutlook.
+
+### لماذا HRMO
+
+المؤسسات الإنسانية تدير موظفين موزعين على مكاتب ميدانية ومنح ومواقع عمل شاقة، وتلتزم بشروط المانحين وقانون العمل المحلي. يجمع HRMO دورة حياة الموظف كلها في مكان واحد ويطبق سياسات المؤسسة تلقائيا، فيفحص كل طلب بالطريقة نفسها ويوثق كل قرار.
+
+- **يعمل بالسياسات.** استحقاقات الإجازات ومدد الإشعار ومستويات الموافقة وفترة التجربة والعمل الإضافي وكل قاعدة أخرى هي إعدادات وليست برمجة. لكل مؤسسة ولكل مكتب قطري مجموعة سياسات خاصة.
+- **مصمم للعمل الميداني.** المنح وخطوط التمويل ومراكز العمل الشاقة والراحة والتعافي واستطلاعات سلامة الموظفين وقوائم الانتشار السريع جزء من النظام.
+- **داخل مايكروسوفت.** تسجيل الدخول والموافقات في Teams وOutlook والمستندات والبيانات تبقى كلها داخل بيئة مايكروسوفت الخاصة بالمؤسسة.
+- **بالعربية والإنجليزية.** دعم كامل للكتابة من اليمين إلى اليسار على الحاسوب والهاتف.
+
+### من يستخدمه
+
+| الواجهة | ما تغطيه |
+|---|---|
+| **الموظف** | طلبات الإجازة مع فحص فوري للسياسات، كشوف الدوام مع توزيع المنح، العمل الإضافي، قسائم الراتب، الخطابات والشهادات، الأداء والأهداف، التعلم، السفر، العهد، الإقرارات، مكتب مساعدة الموارد البشرية، الرفاه والدعم السري |
+| **المدير المباشر** | نظرة على الفريق، صندوق واحد لكل الموافقات، تقويم إجازات الفريق، تقييمات الأداء وخطط التحسين، الهيكل التنظيمي |
+| **الموارد البشرية** | سجل الموظفين، التوظيف، الاستقبال، تغيير الحالة الوظيفية، إنهاء الخدمة والتسوية النهائية، الوظائف والميزانية، الإجازات والحضور، دورة الأداء، التعلم، سلامة الموظفين، الرفاه، التراخيص المهنية، القضايا والتظلمات، السفر، العهد، سجل التدقيق وإعدادات السياسات |
+| **المدير القطري** | لوحة تنفيذية، الموافقات، كلفة القوى العاملة حسب المنحة، مخاطر التمويل، الالتزامات، التنوع والتوطين، سلامة الموظفين |
+
+### الوحدات
+
+**دورة حياة الموظف**
+- التوظيف بخطوات إلزامية: وظيفة ممولة، تقييم اللجنة، التحقق من المراجع، فحص الامتثال وسوء السلوك
+- قوائم الاستقبال ومتابعة فترة التجربة وتجديد العقود
+- تغيير الحالة الوظيفية: الترقية والنقل وتعديل الراتب والتمويل، بموافقة
+- إنهاء الخدمة: الاستقالة، المخالصة حسب القسم، التسوية النهائية وتقييم الخروج
+
+**الوقت والرواتب**
+- الإجازات بكل أنواعها، مع الأرصدة والترحيل وتقويم العطل
+- الحضور اليومي، كشوف الدوام الشهرية موزعة على المنح، العمل الإضافي
+- قسائم الراتب ومدخلات رواتب مدققة للنظام المالي
+
+**الأداء والتعلم**
+- التقييم السنوي وتقييم فترة التجربة، الأهداف وخطط تحسين الأداء
+- دليل الدورات، الدورات الإلزامية والاحتياجات التدريبية
+
+**واجب الرعاية**
+- استطلاعات السلامة بعد الحوادث، مع عد حي حسب المكتب
+- الراحة والتعافي، رصد الإنهاك وبدل المشقة
+- طلبات الدعم النفسي الاجتماعي السرية
+- متابعة التراخيص المهنية للكوادر الطبية والفنية
+
+**علاقات العمل**
+- القضايا التأديبية مع سلم الإنذارات وتواريخ انتهائها
+- التظلمات مع مهل التصعيد
+- إقرارات تضارب المصالح والهدايا
+- مكتب مساعدة الموارد البشرية بمهل رد محددة
+
+**المؤسسة**
+- الوظائف والميزانية مقابل المنح
+- الهيكل التنظيمي، السفر والتصريح الأمني، العهد
+- قائمة الانتشار السريع للطوارئ
+- مؤشرات وتقارير الموارد البشرية للإدارة والمانحين
+
+### الموافقات في Teams وOutlook
+
+يصل كل طلب إلى صاحب القرار كبطاقة في Teams وOutlook. تعرض البطاقة الطلب ونتيجة فحص السياسات وزري الموافقة والرفض، فيقرر المدير دون فتح النظام. يسجل كل قرار مع صاحبه ووقته ومصدره.
+
+### الأمان والخصوصية
+
+- البيانات تبقى في اشتراك Azure الخاص بالمؤسسة وفي المنطقة التي تختارها.
+- الدخول عبر Microsoft Entra ID، فتسري قواعد الأمان الخاصة بالمؤسسة.
+- كل شخص يرى ما يسمح به دوره فقط: الموظف يرى سجله، والمدير يرى فريقه، وبيانات الرواتب والبيانات الخاصة محصورة في الموارد البشرية والإدارة.
+- كل تغيير يحتفظ بتاريخه، وسجل التدقيق لا يقبل التعديل.
+- لا يستقبل النظام بلاغات التحرش والاحتيال والحماية، ويوجه الموظف إلى قناة الإبلاغ المستقلة في المؤسسة.
+
+### التوثيق
+
+| | العربية | English |
+|---|---|---|
+| المرجع الوظيفي: كل القواعد والإعدادات | [system-reference.md](docs/ar/system-reference.md) | [system-reference.md](docs/en/system-reference.md) |
+| المعمارية على Azure | [architecture.md](docs/ar/architecture.md) | [architecture.md](docs/en/architecture.md) |
+| دليل النشر | [azure-setup.md](docs/ar/azure-setup.md) | [azure-setup.md](docs/en/azure-setup.md) |
+| مجموعة السياسات الافتراضية | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
+
+القيم الافتراضية للسياسات أمثلة، وتراجعها كل مؤسسة حسب سياساتها وقانون العمل المحلي.
+
+</div>
+
+---
+*Microsoft, Azure, Teams and Outlook are trademarks of Microsoft. This project is not affiliated with or endorsed by Microsoft.*
