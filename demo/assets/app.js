@@ -363,7 +363,7 @@
     <header class="topbar">
       <button class="iconbtn only-sm" data-act="nav-toggle" aria-label="${esc(L('القائمة', 'Menu'))}" aria-expanded="${S.navOpen}">${icon('menu')}</button>
       <button class="iconbtn hide-md" data-act="collapse" aria-label="${esc(L('طي القائمة الجانبية', 'Collapse sidebar'))}" data-tip="${esc(esc(S.collapsed ? L('توسيع القائمة', 'Expand menu') : L('طي القائمة', 'Collapse menu')))}">${icon('panel')}</button>
-      <div class="brand"><span class="logo" aria-hidden="true">HM</span><span>HRMO</span></div>
+      <div class="brand"><img class="logo" src="assets/brand/apple-touch-icon.png" alt="" width="32" height="32"><span>HRMO</span></div>
       <button class="ws-switch" data-act="menu-ws" aria-haspopup="menu" title="${esc(L('تبديل مساحة العمل', 'Switch workspace'))}">${icon(S.role === 'CD' ? 'chart' : S.role === 'HR' ? 'people' : 'person', 14)}<span class="wl">${esc(roleLabel(S.role))}</span>${icon('down', 12)}</button>
       <span class="demo-pill">${esc(L('بيانات تجريبية', 'Demo data'))}</span>${EXT.topbar.map((fn) => fn()).join('')}
       <label class="search">${icon('search', 16)}<span class="sr-only">${esc(L('بحث', 'Search'))}</span><input type="search" id="gsearch" placeholder="${esc(L('ابحث عن موظف أو رقم وظيفي…', 'Search employees or staff numbers…'))}" data-act="global-search"><kbd>/</kbd></label>
@@ -1358,7 +1358,7 @@
   }
   function docModal(title, bodyHTML, ref) {
     const org = T(D.ORG);
-    return modal(title, `<div class="doc" id="doc-print"><div class="doc-head"><div class="doc-logo">HM</div><div><b>${esc(org)}</b><div class="subtle">${esc(L('إدارة الموارد البشرية', 'Human Resources'))}</div></div><div class="doc-meta"><div>${esc(L('التاريخ', 'Date'))}: ${esc(fmtD(D.todayISO))}</div>${ref ? `<div>${esc(L('المرجع', 'Ref'))}: <bdi>${esc(ref)}</bdi></div>` : ''}</div></div>${bodyHTML}<div class="doc-sign"><div>${esc(L('التوقيع', 'Signature'))}</div><div class="line"></div><div class="subtle">${esc(L('مدير الموارد البشرية', 'HR Manager'))}</div></div><div class="doc-foot subtle">${esc(L('مستند مولَّد من قالب في HRMO · بيانات تجريبية', 'Generated from a template in HRMO · demo data'))}</div></div>`,
+    return modal(title, `<div class="doc" id="doc-print"><div class="doc-head"><img class="doc-logo" src="${esc(new URL('assets/brand/apple-touch-icon.png', document.baseURI).href)}" alt="HRMO"><div><b>${esc(org)}</b><div class="subtle">${esc(L('إدارة الموارد البشرية', 'Human Resources'))}</div></div><div class="doc-meta"><div>${esc(L('التاريخ', 'Date'))}: ${esc(fmtD(D.todayISO))}</div>${ref ? `<div>${esc(L('المرجع', 'Ref'))}: <bdi>${esc(ref)}</bdi></div>` : ''}</div></div>${bodyHTML}<div class="doc-sign"><div>${esc(L('التوقيع', 'Signature'))}</div><div class="line"></div><div class="subtle">${esc(L('مدير الموارد البشرية', 'HR Manager'))}</div></div><div class="doc-foot subtle">${esc(L('مستند مولَّد من قالب في HRMO · بيانات تجريبية', 'Generated from a template in HRMO · demo data'))}</div></div>`,
       `<button class="btn" data-act="close-overlay">${esc(L('إغلاق', 'Close'))}</button><button class="btn primary" data-act="doc-print">${icon('doc', 16)}${esc(L('طباعة / PDF', 'Print / PDF'))}</button>`);
   }
   function printDoc() {
