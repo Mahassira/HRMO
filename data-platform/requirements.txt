@@ -1,0 +1,2 @@
+openpyxl>=3.1
+# pyodbc>=5   only needed to run against SQL Server (--engine mssql)

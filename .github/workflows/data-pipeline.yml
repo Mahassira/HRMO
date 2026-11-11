@@ -1,0 +1,43 @@
+name: Data pipeline
+
+# Generates the fictitious sources, runs the pipeline and its tests, and publishes the quality report.
+
+on:
+  push:
+    branches: [main]
+    paths: ["data-platform/**", ".github/workflows/data-pipeline.yml"]
+  pull_request:
+    paths: ["data-platform/**", ".github/workflows/data-pipeline.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: data-platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Tests
+        run: python -m unittest discover -s tests -v
+      - name: Generate sources
+        run: python generate_sources.py
+      - name: Run pipeline
+        run: python pipeline/run_pipeline.py
+      - name: Benchmark
+        run: python benchmark.py
+      - name: Publish quality report
+        if: always()
+        run: cat out/quality_report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-report
+          path: data-platform/out/quality_report.md
