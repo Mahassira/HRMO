@@ -551,3 +551,36 @@ td .who .n { font-weight: var(--fw-medium); color: var(--text); }
 .scrim.still, .drawer.still, .modal.still { animation: none; }
 .obj-row { display: grid; grid-template-columns: minmax(0, 1fr) 180px auto; gap: 12px; align-items: center; }
 @media (max-width: 640px) { .obj-row { grid-template-columns: minmax(0, 1fr) auto; } .obj-row > div:first-child { grid-column: 1 / -1; } }
+
+/* 17. Pilot: welcome screen and feedback */
+.welcome { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow: auto; display: flex; animation: fade var(--t-fast); }
+.welcome-in { margin: auto; width: min(880px, 100%); padding: var(--s-8) var(--s-6); display: grid; gap: var(--s-4); }
+.welcome-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.welcome-top img { border-radius: var(--r-lg); }
+.welcome h1 { margin: 0; font-size: 28px; line-height: 1.25; font-weight: var(--fw-semibold); }
+.welcome h2 { margin: var(--s-2) 0 0; font-size: var(--fs-body); font-weight: var(--fw-semibold); color: var(--text-2); }
+.welcome-lead { margin: 0; font-size: 16px; line-height: 1.6; color: var(--text-2); max-width: 64ch; }
+.welcome-name { max-width: 320px; }
+.welcome-roles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-3); }
+.welcome-role { display: grid; gap: 6px; align-content: start; text-align: start; padding: var(--s-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--sh-1); cursor: pointer; font: inherit; color: inherit; transition: border-color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast); }
+.welcome-role:hover { border-color: var(--primary); box-shadow: var(--sh-2); transform: translateY(-1px); }
+.welcome-role:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.wr-ic { width: 36px; height: 36px; border-radius: var(--r-md); background: var(--primary-50); color: var(--primary); display: grid; place-items: center; }
+.wr-t { font-weight: var(--fw-semibold); font-size: 15px; }
+.wr-d { font-size: var(--fs-caption); color: var(--text-2); line-height: 1.5; }
+.welcome-note { display: flex; gap: var(--s-3); padding: var(--s-4); background: var(--primary-50); border: 1px solid var(--primary-100); border-radius: var(--r-lg); line-height: 1.6; }
+.welcome-note svg { color: var(--primary); flex: none; margin-top: 3px; }
+.welcome-foot { margin: 0; font-size: var(--fs-caption); color: var(--text-3); }
+.fb-types { gap: var(--s-2) var(--s-4); }
+.fb-top { gap: 6px; }
+.fb-fab { display: none; }
+@media (max-width: 1024px) { .welcome-roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .fb-fab { position: fixed; inset-block-end: 16px; inset-inline-end: 16px; z-index: 150; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: var(--fw-medium); box-shadow: var(--sh-3); cursor: pointer; }
+  .fb-fab[hidden] { display: none; }
+}
+@media (max-width: 640px) {
+  .welcome-in { padding: var(--s-6) var(--s-4); }
+  .welcome h1 { font-size: 22px; }
+  .welcome-roles { grid-template-columns: minmax(0, 1fr); }
+}
