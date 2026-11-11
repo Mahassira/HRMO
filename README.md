@@ -2,9 +2,9 @@
 
 # HRMO
 
-Configurable HR management system for humanitarian and non-profit organizations (up to ~800 employees), designed to run inside **Microsoft Teams and Outlook**.
+Configurable HR management system for humanitarian and non-profit organizations. Built on **Microsoft Azure** and runs entirely within the Microsoft ecosystem.
 
-نظام قابل للتهيئة لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية (حتى نحو 800 موظف)، مصمَّم ليعمل داخل **Microsoft Teams وOutlook**.
+نظام قابل للتهيئة لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. مبني على **Microsoft Azure** ويعمل داخل نظام مايكروسوفت بالكامل.
 
 ![HRMO — Country Director](docs/images/en-country-director.png)
 
