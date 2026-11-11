@@ -9,6 +9,7 @@
    - Row-level security (section 7) filters every query by that context, so a bug in the API cannot leak other rows.
    - Salary and other sensitive fields live in separate tables that MANAGER and EMPLOYEE (others) cannot read.
    - Core tables are system-versioned (temporal): every change keeps its previous version.
+   - Power BI reads through the rpt schema with its own read-only roles (db/reporting.sql); it has no access to base tables.
 */
 
 -- 0. API identity -------------------------------------------------------------------------------------------------
@@ -17,6 +18,11 @@
 --   ALTER ROLE hrmo_api ADD MEMBER [<api-app-name>];
 
 CREATE ROLE hrmo_api;
+GO
+-- Read-only roles for Power BI (see db/reporting.sql). They can read the rpt schema only.
+CREATE ROLE hrmo_reporting;            -- workforce data without pay or private fields
+GO
+CREATE ROLE hrmo_reporting_sensitive;  -- adds pay; give only to the finance/HR reporting identity
 GO
 CREATE SCHEMA org;
 GO
@@ -269,7 +275,8 @@ RETURNS TABLE WITH SCHEMABINDING AS
 RETURN SELECT 1 AS ok
 WHERE @EmployeeId = CAST(SESSION_CONTEXT(N'employee_id') AS int)
    OR @ManagerId  = CAST(SESSION_CONTEXT(N'employee_id') AS int)
-   OR CAST(SESSION_CONTEXT(N'role') AS varchar(8)) IN ('HR', 'CD');
+   OR CAST(SESSION_CONTEXT(N'role') AS varchar(8)) IN ('HR', 'CD')
+   OR IS_ROLEMEMBER(N'hrmo_reporting') = 1 OR IS_ROLEMEMBER(N'hrmo_reporting_sensitive') = 1;
 GO
 
 -- Sensitive tables: the employee (own row) and HR/CD only. Managers are excluded on purpose.
@@ -277,7 +284,8 @@ CREATE FUNCTION sec.fn_sensitive_visible (@EmployeeId int)
 RETURNS TABLE WITH SCHEMABINDING AS
 RETURN SELECT 1 AS ok
 WHERE @EmployeeId = CAST(SESSION_CONTEXT(N'employee_id') AS int)
-   OR CAST(SESSION_CONTEXT(N'role') AS varchar(8)) IN ('HR', 'CD');
+   OR CAST(SESSION_CONTEXT(N'role') AS varchar(8)) IN ('HR', 'CD')
+   OR IS_ROLEMEMBER(N'hrmo_reporting_sensitive') = 1;
 GO
 
 -- Rows that belong to an employee (leave, ledger): self, HR/CD, or the employee's line manager.
@@ -286,6 +294,7 @@ RETURNS TABLE WITH SCHEMABINDING AS
 RETURN SELECT 1 AS ok
 WHERE @EmployeeId = CAST(SESSION_CONTEXT(N'employee_id') AS int)
    OR CAST(SESSION_CONTEXT(N'role') AS varchar(8)) IN ('HR', 'CD')
+   OR IS_ROLEMEMBER(N'hrmo_reporting') = 1 OR IS_ROLEMEMBER(N'hrmo_reporting_sensitive') = 1
    OR EXISTS (SELECT 1 FROM hr.Employee e
               WHERE e.EmployeeId = @EmployeeId
                 AND e.ManagerId = CAST(SESSION_CONTEXT(N'employee_id') AS int));
