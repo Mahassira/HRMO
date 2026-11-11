@@ -1,0 +1,4 @@
+sources/
+out/
+warehouse.db
+__pycache__/
