@@ -1,3 +1,5 @@
+<p align="center"><img src="demo/assets/brand/logo-dark.png" alt="HRMO — Human Resource Systems" width="260"></p>
+
 # HRMO
 
 Configurable HR management system for humanitarian and non-profit organizations (up to ~800 employees), designed to run inside **Microsoft Teams and Outlook**.
