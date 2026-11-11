@@ -7,11 +7,11 @@
  *                    Web3Forms:  https://api.web3forms.com/submit  (also set accessKey)
  * feedback.accessKey only for services that need a public access key in the request.
  *
- * The service forwards each submission to the e-mail address registered with it,
- * so no e-mail address is written in this repository.
+ * feedback.email     address that "Send by e-mail" opens a message to, from the tester's own mail app.
  */
 window.HRMO_CONFIG = {
   feedback: {
+    email: 'mahassira@outlook.com',
     endpoint: '',
     accessKey: ''
   }
