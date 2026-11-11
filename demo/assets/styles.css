@@ -164,7 +164,7 @@ svg { flex: none; }
 .scrim-nav { display: none; }
 
 /* ---------- 5. Content area ---------- */
-.content { overflow: auto; min-width: 0; padding: var(--s-4) var(--s-6) var(--s-8); }
+.content { position: relative; overflow: auto; min-width: 0; padding: var(--s-4) var(--s-6) var(--s-8); }
 .page { max-width: 1320px; margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
 .crumbs { display: flex; align-items: center; gap: 6px; font-size: var(--fs-caption); color: var(--text-2); flex-wrap: wrap; }
 .crumbs a, .crumbs button { color: var(--text-2); background: none; border: 0; padding: 0; cursor: pointer; font-size: inherit; }
