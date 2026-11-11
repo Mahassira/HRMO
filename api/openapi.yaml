@@ -1,0 +1,409 @@
+openapi: 3.0.3
+info:
+  title: HRMO API
+  version: 0.1.0
+  description: >
+    Phase-1 contract: identity, employees, leave, approvals and policy.
+    Every request carries a Microsoft Entra ID access token for the HRMO app registration.
+    The API resolves the caller to an employee and a role, sets them in the SQL session context,
+    and evaluates the policy rules on the server. Blocking rules return 422 with the rule ID.
+servers:
+  - url: /api
+security:
+  - entra: []
+tags:
+  - name: identity
+  - name: employees
+  - name: leave
+  - name: approvals
+  - name: policy
+paths:
+  /me:
+    get:
+      tags: [identity]
+      summary: Current user, roles and country
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /employees:
+    get:
+      tags: [employees]
+      summary: List employees visible to the caller
+      description: Employees see themselves, managers see their reports, HR and CD see the country.
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: Name or staff number }
+        - { name: office, in: query, schema: { type: string } }
+        - { name: department, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/EmployeeStatus' } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Employee' } }
+                  total: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /employees/{id}:
+    get:
+      tags: [employees]
+      summary: One employee
+      description: Compensation and private fields are returned only to the employee, HR and CD.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmployeeDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /leave/types:
+    get:
+      tags: [leave]
+      summary: Leave types available to the caller's employment category
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/LeaveType' } }
+  /leave/balances:
+    get:
+      tags: [leave]
+      summary: Leave balances
+      parameters:
+        - { name: employeeId, in: query, schema: { type: integer }, description: Defaults to the caller }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/LeaveBalance' } }
+  /leave/requests:
+    get:
+      tags: [leave]
+      summary: Leave requests visible to the caller
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [mine, team, all], default: mine } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/LeaveStatus' } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/LeaveRequest' } }
+    post:
+      tags: [leave]
+      summary: Submit a leave request
+      description: >
+        Working days, balance, notice period, overlap and documentation rules are evaluated on the server.
+        Use `dryRun=true` to get the policy checks without saving (used by the form as the user types).
+      parameters:
+        - { name: dryRun, in: query, schema: { type: boolean, default: false } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LeaveRequestInput' }
+      responses:
+        '200':
+          description: Dry run result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PolicyResult' }
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LeaveRequest' }
+        '422': { $ref: '#/components/responses/PolicyBlocked' }
+  /leave/requests/{id}/cancel:
+    post:
+      tags: [leave]
+      summary: Cancel own request before it starts
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LeaveRequest' }
+        '422': { $ref: '#/components/responses/PolicyBlocked' }
+  /approvals:
+    get:
+      tags: [approvals]
+      summary: Approvals waiting for the caller
+      parameters:
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/ApprovalType' } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Approval' } }
+  /approvals/{id}/decision:
+    post:
+      tags: [approvals]
+      summary: Approve or reject the caller's open step
+      description: Also called by the Teams and Outlook cards; the channel is recorded in the audit trail.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [APPROVED, REJECTED] }
+                comment: { type: string, maxLength: 400 }
+                channel: { type: string, enum: [WEB, TEAMS, OUTLOOK], default: WEB }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: The step was already decided
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/PolicyBlocked' }
+  /policy:
+    get:
+      tags: [policy]
+      summary: Policy set in force for the caller's country
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PolicySet' }
+    put:
+      tags: [policy]
+      summary: Publish a new policy version (HR proposes, CD approves)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validFrom, value]
+              properties:
+                validFrom: { type: string, format: date }
+                value: { type: object, description: Same structure as data/config-defaults/policy-defaults.json }
+      responses:
+        '202':
+          description: Sent to the Country Director for approval
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Approval' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    entra:
+      type: oauth2
+      description: Microsoft Entra ID, single tenant. Scope `access_as_user` on the HRMO app registration.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            access_as_user: Use HRMO as the signed-in user
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+  responses:
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Signed in, but not allowed (no employee record, or wrong role)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Not found or not visible to the caller
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PolicyBlocked:
+      description: A blocking policy rule failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PolicyResult' }
+  schemas:
+    Role: { type: string, enum: [EMPLOYEE, MANAGER, HR, CD] }
+    EmployeeStatus: { type: string, enum: [ONBOARDING, ACTIVE, SUSPENDED, SEPARATED] }
+    LeaveStatus: { type: string, enum: [PENDING, MANAGER_OK, APPROVED, REJECTED, CANCELLED] }
+    ApprovalType: { type: string, enum: [LEAVE, COS, HIRE, SANCTION, POSITION, OVERTIME, TRAVEL] }
+    Text:
+      type: object
+      required: [ar, en]
+      properties:
+        ar: { type: string }
+        en: { type: string }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { $ref: '#/components/schemas/Text' }
+    Me:
+      type: object
+      required: [employee, roles, country]
+      properties:
+        employee: { $ref: '#/components/schemas/Employee' }
+        roles: { type: array, items: { $ref: '#/components/schemas/Role' } }
+        country: { type: string }
+        directReports: { type: integer }
+    Employee:
+      type: object
+      required: [id, staffNo, name, title, office, department, category, status]
+      properties:
+        id: { type: integer }
+        staffNo: { type: string }
+        name: { $ref: '#/components/schemas/Text' }
+        title: { $ref: '#/components/schemas/Text' }
+        office: { type: string }
+        department: { type: string }
+        category: { type: string, enum: [REGULAR, TEMPORARY, CONSULTANT, INTERN, VOLUNTEER] }
+        grade: { type: integer }
+        managerId: { type: integer, nullable: true }
+        hireDate: { type: string, format: date }
+        contractEnd: { type: string, format: date, nullable: true }
+        status: { $ref: '#/components/schemas/EmployeeStatus' }
+    EmployeeDetail:
+      allOf:
+        - $ref: '#/components/schemas/Employee'
+        - type: object
+          properties:
+            email: { type: string }
+            probationEnd: { type: string, format: date, nullable: true }
+            grants:
+              type: array
+              items:
+                type: object
+                properties:
+                  code: { type: string }
+                  percentage: { type: number }
+            compensation:
+              description: Present only for the employee, HR and CD
+              type: object
+              properties:
+                baseSalary: { type: number }
+                currency: { type: string }
+            private:
+              description: Present only for the employee, HR and CD
+              type: object
+              properties:
+                phone: { type: string }
+                emergencyName: { type: string }
+                emergencyPhone: { type: string }
+    LeaveType:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { $ref: '#/components/schemas/Text' }
+        paid: { type: boolean }
+    LeaveBalance:
+      type: object
+      required: [type, entitled, taken, pending, available]
+      properties:
+        type: { type: string }
+        entitled: { type: number }
+        carriedOver: { type: number }
+        taken: { type: number }
+        pending: { type: number }
+        available: { type: number }
+    LeaveRequestInput:
+      type: object
+      required: [type, startDate, endDate]
+      properties:
+        type: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        reason: { type: string, maxLength: 400 }
+        employeeId: { type: integer, description: HR only, to file on behalf of an employee }
+    LeaveRequest:
+      type: object
+      required: [id, employeeId, type, startDate, endDate, workingDays, status]
+      properties:
+        id: { type: integer }
+        employeeId: { type: integer }
+        type: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        workingDays: { type: number }
+        reason: { type: string }
+        status: { $ref: '#/components/schemas/LeaveStatus' }
+        checks: { type: array, items: { $ref: '#/components/schemas/PolicyCheck' } }
+        createdAt: { type: string, format: date-time }
+    PolicyCheck:
+      type: object
+      required: [rule, level, ok, message]
+      properties:
+        rule: { type: string, example: LV-062 }
+        level: { type: string, enum: [BLOCK, WARN, INFO] }
+        ok: { type: boolean }
+        message: { $ref: '#/components/schemas/Text' }
+    PolicyResult:
+      type: object
+      required: [ok, checks]
+      properties:
+        ok: { type: boolean, description: False when any BLOCK check failed }
+        workingDays: { type: number }
+        checks: { type: array, items: { $ref: '#/components/schemas/PolicyCheck' } }
+    Approval:
+      type: object
+      required: [id, type, subject, status, steps]
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/ApprovalType' }
+        subject: { $ref: '#/components/schemas/Employee' }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, CANCELLED] }
+        summary: { $ref: '#/components/schemas/Text' }
+        checks: { type: array, items: { $ref: '#/components/schemas/PolicyCheck' } }
+        createdAt: { type: string, format: date-time }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [stepNo, approverRole]
+            properties:
+              stepNo: { type: integer }
+              approverRole: { type: string, enum: [MANAGER, HR, CD] }
+              decision: { type: string, enum: [APPROVED, REJECTED], nullable: true }
+              decidedBy: { type: integer, nullable: true }
+              decidedAt: { type: string, format: date-time, nullable: true }
+              channel: { type: string, enum: [WEB, TEAMS, OUTLOOK], nullable: true }
+    PolicySet:
+      type: object
+      required: [validFrom, value]
+      properties:
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+        value: { type: object }
