@@ -24,6 +24,7 @@ flowchart LR
   A -->|managed identity| K[Key Vault]
   A -->|Microsoft Graph| T[Teams and Outlook<br/>approval cards]
   A --> M[Application Insights]
+  D -->|rpt schema, read-only| P[Power BI<br/>management reports]
 ```
 
 | Component | Azure service | Role |
@@ -35,7 +36,7 @@ flowchart LR
 | Secrets | Key Vault | Graph and SMS credentials when phase 3 needs them |
 | Monitoring | Application Insights + Log Analytics | Errors, performance, SQL audit logs (30-day retention, 1 GB/day cap) |
 
-Files: [`infra/main.bicep`](../../infra/main.bicep), [`db/schema.sql`](../../db/schema.sql), [`api/openapi.yaml`](../../api/openapi.yaml).
+Files: [`infra/main.bicep`](../../infra/main.bicep), [`db/schema.sql`](../../db/schema.sql), [`db/reporting.sql`](../../db/reporting.sql), [`api/openapi.yaml`](../../api/openapi.yaml).
 
 ## 3. Security and confidentiality
 
@@ -78,7 +79,7 @@ Prerequisites: an Azure subscription, permission to create an app registration, 
 1. Create a resource group in the required region.
 2. Edit `infra/main.parameters.json` (SQL admin group ID and name).
 3. `az deployment group create -g <resource-group> -f infra/main.bicep -p infra/main.parameters.json`
-4. Connect to the database as a member of the admin group, run `db/schema.sql`, then create the API user (step 0 in the script).
+4. Connect to the database as a member of the admin group, run `db/schema.sql`, then create the API user (step 0 in the script). Run `db/reporting.sql` when Power BI reports are needed.
 5. Register the HRMO application in Entra ID (single tenant, scope `access_as_user`) and grant admin consent.
 6. Link GitHub to Azure and run the **Deploy to Azure** workflow: see [azure-setup.md](azure-setup.md). Steps 1–3 are then automatic.
 7. Publish the Teams app package to the organisation's app catalogue (phase 3).
@@ -89,9 +90,43 @@ Prerequisites: an Azure subscription, permission to create an app registration, 
 |---|---|---|
 | 1. Foundation | Architecture, infrastructure template, core schema, API contract | **This change** |
 | 2. Core | API for identity, employees, leave, approvals; front end reads from the API instead of browser storage; CI/CD | Next |
-| 3. Integration | Teams tab and approval cards, Outlook actionable messages, scheduled jobs, SMS | Planned |
+| 3. Integration | Teams tab and approval cards, Outlook actionable messages, scheduled jobs, SMS, Power BI report pack | Planned |
 | 4. Modules | Remaining modules in the order the customer chooses; data migration | Planned |
 
-## 7. Not yet verified
+## 7. Reporting layer (Power BI)
+
+Management reports are built in Power BI on a star schema that lives **inside the HRMO database**, in the `rpt` schema ([`db/reporting.sql`](../../db/reporting.sql)). There is no separate warehouse and no data pipeline to run or pay for.
+
+| Classic analytics stack | In HRMO |
+|---|---|
+| Data sources | The HRMO database |
+| Azure Data Factory | Not needed: one source |
+| Bronze / Silver / Gold | `rpt` views: cleaned and shaped for reporting |
+| Data warehouse | The same database |
+| Power BI | Connects to `rpt` only |
+
+**Model**
+
+| Type | Objects |
+|---|---|
+| Dimensions | `DimDate`, `DimEmployee`, `DimOffice`, `DimDepartment`, `DimGrant`, `DimLeaveType` |
+| Facts | `FactHeadcountMonthly` (rebuilt from change history), `FactLeave`, `FactLeaveBalance`, `FactApproval`, `FactGrantAllocation` |
+| Sensitive facts | `FactCompensation`, `FactGrantCost` |
+
+**Reports this supports:** headcount and turnover trend by office and department, contracts and grants ending soon, leave taken and outstanding balances, approval volumes and decision time (including the share decided from Teams and Outlook), gender and localization in leadership, staff cost by grant.
+
+**Confidentiality**
+
+- Power BI signs in with its own identity and can read the `rpt` schema only, never the base tables.
+- Two roles: `hrmo_reporting` (no pay or private fields) and `hrmo_reporting_sensitive` (adds pay). Pay reports use a separate identity and a restricted workspace.
+- The views leave out national ID, bank details, phone numbers, leave reasons and case files entirely.
+- Who sees which office or country inside a report is set with row-level security roles in the Power BI model.
+- Diversity figures are shown only in aggregate, respecting the minimum group size (rule DI-004).
+
+**Cost:** Power BI is licensed per report viewer, so viewers are limited to management and HR. Confirm the current price with Microsoft.
+
+**When to add a warehouse:** when reports must combine data from outside HRMO (finance system, payroll files, donor data), consolidate several organisations, or when heavy historical queries slow the operational database. Azure Data Factory and a warehouse are then added behind the same `rpt` names, so existing reports keep working.
+
+## 8. Not yet verified
 
 The infrastructure template, schema and API contract were written without access to an Azure subscription. The OpenAPI file was validated for structure only. The first real test is step 3 of the deployment in the customer's subscription; expect small corrections (API versions, region availability).
