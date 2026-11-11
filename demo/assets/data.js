@@ -62,7 +62,7 @@
   };
 
   // ---------- Reference data ----------
-  const ORG = { ar: 'منظمة نموذجية للإغاثة', en: 'Sample Relief Organization' };
+  const ORG = { ar: 'HRMO', en: 'HRMO' };
   const OFFICES = [
     { id: 'MO', ar: 'المكتب الرئيسي', en: 'Main Office', w: 34, hardship: 'B' },
     { id: 'NF', ar: 'المكتب الميداني الشمالي', en: 'North Field Office', w: 20, hardship: 'C' },
@@ -160,7 +160,7 @@
     const sickUsed = chance(0.45) ? int(1, 6) : 0;
     const emp = {
       id: `E${String(i + 1).padStart(4, '0')}`,
-      staffNo: `SRO-${String(1000 + i)}`,
+      staffNo: `HRMO-${String(1000 + i)}`,
       name, gender: g,
       dept: d[0], deptName: { ar: d[1], en: d[2] },
       position: { ar: g === 'F' ? pos[0].replace(/\/ة/g, 'ة') : pos[0].replace(/\/ة/g, ''), en: pos[1] }, grade,
