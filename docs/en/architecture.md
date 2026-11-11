@@ -80,7 +80,7 @@ Prerequisites: an Azure subscription, permission to create an app registration, 
 3. `az deployment group create -g <resource-group> -f infra/main.bicep -p infra/main.parameters.json`
 4. Connect to the database as a member of the admin group, run `db/schema.sql`, then create the API user (step 0 in the script).
 5. Register the HRMO application in Entra ID (single tenant, scope `access_as_user`) and grant admin consent.
-6. Deploy the front end and API from GitHub Actions (added in phase 2).
+6. Link GitHub to Azure and run the **Deploy to Azure** workflow: see [azure-setup.md](azure-setup.md). Steps 1–3 are then automatic.
 7. Publish the Teams app package to the organisation's app catalogue (phase 3).
 
 ## 6. Phases

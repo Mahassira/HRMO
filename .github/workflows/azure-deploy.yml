@@ -1,0 +1,88 @@
+name: Deploy to Azure
+
+# Creates or updates the Azure resources (infra/main.bicep) and publishes the front end.
+# Sign-in uses OpenID Connect: no password or key is stored in GitHub.
+# One-time setup: docs/en/azure-setup.md · docs/ar/azure-setup.md
+#
+# Repository variables (Settings → Secrets and variables → Actions → Variables):
+#   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, SQL_ADMIN_GROUP_ID
+# Optional: AZURE_RESOURCE_GROUP (default hrmo-rg), SQL_ADMIN_GROUP_NAME (default "HRMO SQL Admins"),
+#           SWA_SKU (Standard | Free, default Standard), SQL_SKU (Basic | S0 | S1, default Basic)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["infra/**", "demo/**", "api/**", ".github/workflows/azure-deploy.yml"]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Skipped until the repository variables exist, so the repository stays green before setup.
+    if: ${{ vars.AZURE_CLIENT_ID != '' }}
+    runs-on: ubuntu-latest
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP || 'hrmo-rg' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure
+        id: infra
+        run: |
+          set -euo pipefail
+          az deployment group create \
+            --resource-group "$RG" \
+            --name hrmo \
+            --template-file infra/main.bicep \
+            --parameters \
+              sqlAdminGroupObjectId="${{ vars.SQL_ADMIN_GROUP_ID }}" \
+              sqlAdminGroupName="${{ vars.SQL_ADMIN_GROUP_NAME || 'HRMO SQL Admins' }}" \
+              staticWebAppSku="${{ vars.SWA_SKU || 'Standard' }}" \
+              sqlSku="${{ vars.SQL_SKU || 'Basic' }}" \
+            --query properties.outputs -o json > outputs.json
+          echo "webName=$(jq -r .webName.value outputs.json)" >> "$GITHUB_OUTPUT"
+          echo "webUrl=$(jq -r .webUrl.value outputs.json)" >> "$GITHUB_OUTPUT"
+          echo "apiName=$(jq -r .apiName.value outputs.json)" >> "$GITHUB_OUTPUT"
+          echo "sqlServer=$(jq -r .sqlServer.value outputs.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Get front-end deployment token
+        id: token
+        run: |
+          set -euo pipefail
+          token=$(az staticwebapp secrets list --name "${{ steps.infra.outputs.webName }}" --resource-group "$RG" --query properties.apiKey -o tsv)
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Publish front end
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.token.outputs.token }}
+          action: upload
+          app_location: demo
+          skip_app_build: true
+          skip_api_build: true
+
+      - name: Summary
+        run: |
+          {
+            echo "### HRMO deployed"
+            echo "- Site: ${{ steps.infra.outputs.webUrl }}"
+            echo "- API app: \`${{ steps.infra.outputs.apiName }}\`"
+            echo "- SQL server: \`${{ steps.infra.outputs.sqlServer }}\`"
+            echo ""
+            echo "First deployment only: run \`db/schema.sql\` on the database, then create the API database user (step 0 in that file) with the API app name above."
+          } >> "$GITHUB_STEP_SUMMARY"
