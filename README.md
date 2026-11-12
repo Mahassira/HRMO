@@ -75,6 +75,22 @@ Every request reaches its approver as a card in Teams and Outlook. The card show
 - Every change keeps its history, and the audit log cannot be edited.
 - Reports of harassment, fraud and safeguarding are not collected in the system. Staff are directed to the organization's independent reporting channel.
 
+## Built with
+
+| Technology | Used for |
+|---|---|
+| Microsoft Azure Static Web Apps | Hosting the interface |
+| Azure Functions | The API that applies the policy rules, and scheduled jobs |
+| Azure SQL Database | Employee data, with row-level security and change history |
+| Azure Blob Storage | Contracts, letters and attachments |
+| Azure Key Vault | Secrets |
+| Azure Monitor and Application Insights | Monitoring and audit logs |
+| Microsoft Entra ID | Sign-in with the work account |
+| Microsoft Teams and Outlook, through Microsoft Graph | Approval cards and notifications |
+| Power BI | Management reports on the reporting model |
+| Bicep and GitHub Actions | Infrastructure as code and automated deployment |
+| T-SQL and Python | Data pipeline, warehouse and data-quality checks |
+
 ## Screens
 
 | | |
@@ -168,6 +184,22 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 - كل تغيير يحتفظ بتاريخه، وسجل التدقيق لا يقبل التعديل.
 - لا يستقبل النظام بلاغات التحرش والاحتيال والحماية، ويوجه الموظف إلى قناة الإبلاغ المستقلة في المؤسسة.
 
+### التقنيات المستخدمة
+
+| التقنية | الاستخدام |
+|---|---|
+| Microsoft Azure Static Web Apps | استضافة الواجهة |
+| Azure Functions | الواجهة البرمجية التي تطبق قواعد السياسات، والمهام المجدولة |
+| Azure SQL Database | بيانات الموظفين، مع أمان على مستوى الصف وتاريخ التغييرات |
+| Azure Blob Storage | العقود والخطابات والمرفقات |
+| Azure Key Vault | الأسرار |
+| Azure Monitor و Application Insights | المراقبة وسجلات التدقيق |
+| Microsoft Entra ID | الدخول بحساب العمل |
+| Microsoft Teams و Outlook عبر Microsoft Graph | بطاقات الموافقة والإشعارات |
+| Power BI | تقارير الإدارة على نموذج التقارير |
+| Bicep و GitHub Actions | البنية ككود والنشر الآلي |
+| T-SQL و Python | مسار البيانات والمستودع وفحوص جودة البيانات |
+
 ### التوثيق
 
 | | العربية | English |
@@ -184,4 +216,4 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 </div>
 
 ---
-*Microsoft, Azure, Teams and Outlook are trademarks of Microsoft. This project is not affiliated with or endorsed by Microsoft.*
+*Microsoft, Azure, Entra, Teams, Outlook and Power BI are trademarks of Microsoft. This project is not affiliated with or endorsed by Microsoft.*
