@@ -266,6 +266,22 @@ CREATE TABLE audit.Event (
   Detail        nvarchar(max) NULL CHECK (Detail IS NULL OR ISJSON(Detail) = 1)
 );
 CREATE INDEX IX_Event_Entity ON audit.Event (Entity, EntityId, At);
+
+-- Who looked at sensitive data, not only who changed it. The API writes one row every time it returns
+-- pay, private data, a case file or an export. Append-only, like audit.Event.
+CREATE TABLE audit.SensitiveAccess (
+  AccessId      bigint IDENTITY PRIMARY KEY,
+  At            datetime2     NOT NULL DEFAULT sysutcdatetime(),
+  ActorId       int           NOT NULL,
+  ActorRole     varchar(8)    NOT NULL,
+  SubjectId     int           NULL,              -- the employee whose data was read; NULL for a list or export
+  Category      varchar(16)   NOT NULL CHECK (Category IN ('COMPENSATION','PRIVATE','CASE','MEDICAL','EXPORT','REPORT')),
+  RecordCount   int           NOT NULL DEFAULT 1, -- more than 1 for lists and exports
+  Purpose       nvarchar(200) NULL,              -- required by the API for exports (SE-006)
+  Channel       varchar(8)    NOT NULL DEFAULT 'WEB' CHECK (Channel IN ('WEB','TEAMS','OUTLOOK','API','POWERBI'))
+);
+CREATE INDEX IX_Access_Subject ON audit.SensitiveAccess (SubjectId, At);
+CREATE INDEX IX_Access_Actor   ON audit.SensitiveAccess (ActorId, At);
 GO
 
 -- 7. Row-level security --------------------------------------------------------------------------------------------
