@@ -311,6 +311,9 @@
   const separations = [];
   for (let k = 0; k < 58; k++) separations.push({ date: iso(addDays(today, -int(5, 360))), type: weighted([['RESIGNATION', 5], ['CONTRACT_END', 6], ['REDUNDANCY', 2], ['DISCIPLINARY', 0.4]]), dept: weighted(deptPairs)[0] });
 
+  // Office of each separation, spread by office size without touching the random sequence.
+  { const spread = ['MO', 'MO', 'MO', 'NF', 'NF', 'SF', 'SF', 'CF', 'CF', 'EF']; separations.forEach((s, k) => { s.office = spread[(k * 7) % 10]; }); }
+
   // ---------- Activity feed seed ----------
   const activity = [
     { id: 'A1', role: 'EMPLOYEE', ch: 'teams', at: iso(addDays(today, -1)), ar: 'تذكير: الإقرار بسياسة الحماية من الاستغلال والانتهاك الجنسي (إصدار 1.4)', en: 'Reminder: acknowledge Safeguarding / PSEA policy (v1.4)', go: 'policies' },
