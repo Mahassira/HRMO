@@ -52,6 +52,45 @@
     if (!isWorkDay(TODAY)) return badge('b-neutral', L('يوم راحة', 'Day off'));
     return badge('b-ok', L('في العمل', 'At work'), 'check');
   }
+  // ---------- Team analytics (manager dashboard) ----------
+  const RATING_SCORE = { OUTSTANDING: 5, VERY_GOOD: 4, SATISFACTORY: 3, NEEDS_IMPROVEMENT: 2, UNSATISFACTORY: 1 };
+  function teamAnalytics(tm, onLeave, pend, prob, ce) {
+    const { kpiCard, delta, lineChart, donutChart, gaugeChart, bars, fmtDs, locale } = H; const n = tm.length; const ids = new Set(tm.map((e) => e.id));
+    // People available on each of the next working days: the team minus approved and pending leave.
+    const avail = []; let d = TODAY;
+    while (avail.length < 10) {
+      if (isWorkDay(d)) { const day = iso(d); const away = D.leaveRequests.filter((r) => ids.has(r.empId) && ['APPROVED', 'PENDING_MANAGER', 'PENDING_HR', 'PENDING_CD'].includes(r.status) && r.from <= day && r.to >= day).length; avail.push({ label: fmtDs(day), full: fmtD(day), value: n - away }); }
+      d = addDays(d, 1);
+    }
+    const lowest = Math.min(...avail.map((p) => p.value));
+    const reg = tm.filter((e) => e.category === 'REGULAR'); const bal = reg.map((e) => ({ label: T(e.name.short), value: Math.max(0, balances(e).annual.available) })).sort((a, b) => b.value - a.value);
+    const avgBal = bal.length ? bal.reduce((t, x) => t + x.value, 0) / bal.length : 0;
+    const waiting = [
+      { label: L('إجازات', 'Leave'), value: teamLeavePending().length },
+      { label: L('كشوف دوام', 'Timesheets'), value: TS.filter((x) => x.status === 'SUBMITTED').length + myTsPending() },
+      { label: L('عمل إضافي', 'Overtime'), value: OT.filter((x) => x.status === 'PENDING' && empById.get(x.empId).managerId === mgrId()).length },
+      { label: L('سفر وتقييمات', 'Travel and appraisals'), value: EXT.mgrPending.reduce((t, fn) => t + fn(), 0) }
+    ];
+    const rated = tm.filter((e) => RATING_SCORE[e.rating]); const avgRating = rated.length ? rated.reduce((t, e) => t + RATING_SCORE[e.rating], 0) / rated.length : 0;
+    const ending = tm.filter((e) => daysBetween(D.todayISO, e.contractEnd) <= 90 || e.inProbation).sort((a, b) => (a.contractEnd > b.contractEnd ? 1 : -1)).slice(0, 5);
+    return `<div class="kgrid">
+        ${kpiCard(pend ? 't-amber' : 't-teal', 'approve', L('بانتظار موافقتك', 'Awaiting your approval'), fmtN(pend), `<span class="kd flat">${pend ? esc(L('طلبات من فريقك', 'requests from your team')) : esc(L('لا شيء معلق', 'Nothing pending'))} ${rule('MG-002')}</span>`)}
+        ${kpiCard('t-blue', 'people', L('حاضرون اليوم', 'Present today'), `${fmtN(n - onLeave)}<small> / ${fmtN(n)}</small>`, delta(null, '', true, onLeave ? L(`${onLeave} في إجازة`, `${onLeave} on leave`) : L('الفريق كاملا', 'Full team')))}
+        ${kpiCard(lowest < n * 0.7 ? 't-red' : 't-teal', 'cal', L('أقل تغطية خلال أسبوعين', 'Lowest cover in two weeks'), `${fmtN(lowest)}<small> / ${fmtN(n)}</small>`, delta(null, '', true, L('بعد احتساب الإجازات المعتمدة والمعلقة', 'after approved and pending leave')))}
+        ${kpiCard('t-blue', 'clock', L('متوسط رصيد الإجازات', 'Average leave balance'), `${fmtN(avgBal, 1)}<small> ${esc(L('يوم', 'days'))}</small>`, delta(null, '', true, L('إجازة سنوية غير مستخدمة', 'unused annual leave')))}
+        ${kpiCard(prob + ce ? 't-amber' : 't-teal', 'doc', L('تجربة أو عقد ينتهي', 'Probation or contract ending'), `${fmtN(prob)}<small> · </small>${fmtN(ce)}`, `<span class="kd flat">${rule('LC-006')} ${rule('LC-040')}</span>`)}
+      </div>
+      <div class="dgrid dg-a">
+        <section class="card"><h2>${esc(L('تغطية الفريق في أيام العمل القادمة', 'Team cover over the next working days'))}</h2>${lineChart(avail, L('عدد المتاحين من الفريق', 'Team members available'))}</section>
+        <section class="card"><div class="card-head"><h2>${esc(L('ما ينتظر موافقتك', 'What is waiting for you'))}</h2><button class="btn subtle sm" data-act="nav" data-v="approvals">${esc(L('فتح الموافقات', 'Open approvals'))}</button></div>${bars(waiting, { title: L('الطلبات المعلقة حسب النوع', 'Pending requests by type') })}</section>
+        <section class="card"><h2>${esc(L('الفريق اليوم', 'The team today'))}</h2>${donutChart([{ label: L('حاضرون', 'Present'), value: n - onLeave }, { label: L('في إجازة', 'On leave'), value: onLeave }], fmtN(n), L('عضو', 'members'), L('الفريق اليوم', 'The team today'))}</section>
+      </div>
+      <div class="dgrid dg-b">
+        <section class="card"><h2>${esc(L('أعلى أرصدة الإجازات', 'Highest leave balances'))}</h2>${bars(bal.slice(0, 7), { title: L('أرصدة الإجازة السنوية', 'Annual leave balances'), fmt: (v) => fmtN(v, 1) })}<p class="subtle" style="margin:10px 0 0">${esc(L('شجعهم على التخطيط لإجازة.', 'Encourage them to plan leave.'))} ${rule('WB-003')}</p></section>
+        <section class="card"><h2>${esc(L('متوسط تقييم الفريق', 'Average team rating'))}</h2>${gaugeChart(avgRating || 1, 5, `<span class="kd flat">${esc(L(`${rated.length} عضوا مقيما`, `${rated.length} members rated`))}</span>`, L('متوسط تقييم الفريق', 'Average team rating'))}</section>
+        <section class="card"><h2>${esc(L('تجربة أو عقد ينتهي قريبا', 'Probation or contract ending soon'))}</h2>${ending.length ? `<div class="table-wrap"><table class="hires"><thead><tr><th>${esc(L('الاسم', 'Name'))}</th><th>${esc(L('الحالة', 'Status'))}</th><th>${esc(L('نهاية العقد', 'Contract end'))}</th></tr></thead><tbody>${ending.map((e) => `<tr class="clickable" data-act="emp" data-id="${e.id}"><td>${who(e, T(e.position))}</td><td>${e.inProbation ? badge('b-info', L('تجربة', 'Probation')) : badge('b-warn', L('عقد ينتهي', 'Contract ending'))}</td><td class="nowrap"><bdi>${esc(fmtD(e.contractEnd))}</bdi></td></tr>`).join('')}</tbody></table></div>` : `<div class="empty">${esc(L('لا يوجد', 'None'))}</div>`}</section>
+      </div>`;
+  }
   function vTeam() {
     const tm = team(); const m = persona();
     const onLeave = tm.filter((e) => D.leaveRequests.some((x) => x.empId === e.id && x.status === 'APPROVED' && x.from <= D.todayISO && x.to >= D.todayISO)).length;
@@ -61,12 +100,7 @@
     const noLeave = tm.filter((e) => e.category === 'REGULAR' && serviceMonths(e) >= D.POLICY.care.burnoutNoLeaveMonths && balances(e).annual.taken === 0);
     const rows = tm.map((e) => `<tr class="clickable" data-act="emp" data-id="${e.id}"><td>${who(e, T(e.position))}</td><td>${todayStatus(e)}</td><td class="num">${e.category === 'REGULAR' ? fmtN(balances(e).annual.available, 1) : '—'}</td><td class="num">${e.lateMarks}</td><td>${H.flagList(e).map(([c, l]) => badge(c, l)).join(' ') || '<span class="subtle">—</span>'}</td><td class="hide-sm">${esc(fmtD(e.contractEnd))}</td></tr>`);
     return `${pageHead(L('فريقي', 'My team'), esc(L(`${tm.length} موظفاً يتبعونك مباشرة · ${T(m.deptName)}`, `${tm.length} direct reports · ${T(m.deptName)}`)), `<button class="btn" data-act="case-new">${icon('flag', 16)}${esc(L('رفع ملاحظة', 'Raise a concern'))}</button><button class="btn primary" data-act="nav" data-v="approvals">${icon('approve', 16)}${esc(L(`الموافقات (${pend})`, `Approvals (${pend})`))}</button>`)}
-      <div class="grid g-4 keep2">
-        ${kpi(L('أعضاء الفريق', 'Team members'), fmtN(tm.length), L('تبعية مباشرة', 'Direct reports'), 'people', 'orgchart')}
-        ${kpi(L('في إجازة اليوم', 'On leave today'), fmtN(onLeave), L('حسب الإجازات المعتمدة', 'Approved leave'), 'cal', 'calendar')}
-        ${kpi(L('بانتظار موافقتك', 'Awaiting your approval'), fmtN(pend), rule('MG-002'), 'approve', 'approvals')}
-        ${kpi(L('تجربة أو عقد ينتهي', 'Probation / contract ending'), `${fmtN(prob)} · ${fmtN(ce)}`, `${rule('LC-006')} ${rule('LC-040')}`, 'clock')}
-      </div>
+      ${teamAnalytics(tm, onLeave, pend, prob, ce)}
       ${noLeave.length ? `<div class="banner info"><span class="bi">${icon('info', 18)}</span><div class="grow"><b>${esc(L(`${noLeave.length} من فريقك لم يأخذوا أي إجازة سنوية هذا العام`, `${noLeave.length} team member(s) have taken no annual leave this year`))}</b><div class="subtle">${esc(L('الراحة جزء من واجب الرعاية. شجّعهم على التخطيط لإجازة.', 'Rest is part of duty of care. Encourage them to plan leave.'))} ${rule('WB-003')}</div></div><span class="subtle">${noLeave.slice(0, 3).map((e) => esc(T(e.name.short))).join('، ')}</span></div>` : ''}
       <section class="card flush"><div class="table-toolbar"><h2 style="margin:0;font-size:var(--fs-section)">${esc(L('أعضاء الفريق', 'Team members'))}</h2><span class="subtle">${esc(L('الراتب والبيانات الحساسة غير ظاهرة للمدير المباشر', 'Salary and sensitive data are hidden from line managers'))} ${rule('RD-003')}</span></div>
         ${table([L('الموظف', 'Employee'), L('اليوم', 'Today'), L('رصيد سنوي', 'Annual bal.'), L('تأخير', 'Late'), L('تنبيهات', 'Flags'), [L('نهاية العقد', 'Contract end'), 'hide-sm']], rows)}</section>`;
