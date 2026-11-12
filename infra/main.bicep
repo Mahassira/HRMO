@@ -28,6 +28,14 @@ param staticWebAppSku string = 'Standard'
 @allowed(['Basic', 'S0', 'S1'])
 param sqlSku string = 'Basic'
 
+@description('Put delete locks on the database, the storage account and the key vault. Remove the locks before deleting them on purpose.')
+param protectFromDeletion bool = true
+
+@description('Days of point-in-time restore for the database (Basic tier: 1-7, Standard: 1-35).')
+@minValue(1)
+@maxValue(35)
+param sqlBackupRetentionDays int = 7
+
 var suffix = uniqueString(resourceGroup().id)
 var tags = { app: 'hrmo' }
 
@@ -63,7 +71,11 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
   resource blob 'blobServices' = {
     name: 'default'
-    properties: { deleteRetentionPolicy: { enabled: true, days: 14 }, isVersioningEnabled: true }
+    properties: {
+      deleteRetentionPolicy: { enabled: true, days: 14 }
+      containerDeleteRetentionPolicy: { enabled: true, days: 14 }
+      isVersioningEnabled: true
+    }
     resource documents 'containers' = { name: 'documents' }
     resource deployments 'containers' = { name: 'deployments' }
   }
@@ -108,6 +120,10 @@ resource db 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
   resource tde 'transparentDataEncryption' = {
     name: 'current'
     properties: { state: 'Enabled' }
+  }
+  resource backups 'backupShortTermRetentionPolicies' = {
+    name: 'default'
+    properties: { retentionDays: sqlBackupRetentionDays }
   }
 }
 
@@ -195,6 +211,26 @@ resource apiVault 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.kvSecretsUser)
   }
+}
+
+// ---------- Delete locks on everything that holds data ----------
+// A lock stops deletion from the portal, the CLI and this template, even by an owner, until the lock is removed.
+resource sqlLock 'Microsoft.Authorization/locks@2020-05-01' = if (protectFromDeletion) {
+  scope: sql
+  name: 'hrmo-do-not-delete'
+  properties: { level: 'CanNotDelete', notes: 'HRMO database server. Remove this lock only for a planned decommission.' }
+}
+
+resource storageLock 'Microsoft.Authorization/locks@2020-05-01' = if (protectFromDeletion) {
+  scope: storage
+  name: 'hrmo-do-not-delete'
+  properties: { level: 'CanNotDelete', notes: 'HRMO documents. Remove this lock only for a planned decommission.' }
+}
+
+resource vaultLock 'Microsoft.Authorization/locks@2020-05-01' = if (protectFromDeletion) {
+  scope: vault
+  name: 'hrmo-do-not-delete'
+  properties: { level: 'CanNotDelete', notes: 'HRMO secrets. Remove this lock only for a planned decommission.' }
 }
 
 // ---------- Front end: Static Web App, linked to the API ----------
