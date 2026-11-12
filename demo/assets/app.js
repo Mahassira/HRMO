@@ -614,6 +614,109 @@
   const lateCases = () => active().filter((e) => e.lateMarks >= D.POLICY.lateMarksThreshold);
   const missingAck = () => active().filter((e) => e.ackMissing.length);
 
+
+  // ---------- HR analytics (dashboard top section) ----------
+  // Every figure is computed from the demo data for the selected office, department and period.
+  S.dash = S.dash || { office: '', dept: '', months: 12 };
+  const addMonthsISO = (isoDate, n) => { const x = parse(isoDate); return iso(new Date(x.getFullYear(), x.getMonth() + n, x.getDate())); };
+  function hrAnalyticsData() {
+    const f = S.dash; const today = D.todayISO;
+    const emps = D.employees.filter((e) => (!f.office || e.office === f.office) && (!f.dept || e.dept === f.dept));
+    const seps = D.separations.filter((x) => (!f.office || x.office === f.office) && (!f.dept || x.dept === f.dept));
+    const from = addMonthsISO(today, -f.months);
+    const headAt = (dt) => emps.filter((e) => e.hireDate <= dt).length + seps.filter((x) => x.date > dt).length;
+    const sepsIn = (a, b) => seps.filter((x) => x.date > a && x.date <= b).length;
+    const rate = (a, b) => { const avg = (headAt(a) + headAt(b)) / 2; return avg ? (sepsIn(a, b) / avg) * (12 / f.months) * 100 : 0; };
+    const now = emps.length; const start = headAt(from);
+    // one point per month end, oldest first
+    const base = parse(today); const trend = [];
+    for (let i = f.months - 1; i >= 0; i--) {
+      const end = i === 0 ? base : new Date(base.getFullYear(), base.getMonth() - i + 1, 0);
+      trend.push({ label: new Intl.DateTimeFormat(locale(), { month: 'short' }).format(end), full: new Intl.DateTimeFormat(locale(), { month: 'long', year: 'numeric' }).format(end), value: headAt(iso(end)) });
+    }
+    const names = {}; D.employees.forEach((e) => { names[e.dept] = e.deptName; });
+    const depts = Object.keys(names).filter((k) => !f.dept || k === f.dept);
+    const byDept = depts.map((k) => ({ id: k, label: T(names[k]), value: emps.filter((e) => e.dept === k).length })).filter((x) => x.value).sort((a, b) => b.value - a.value);
+    const turnDept = byDept.map((x) => { const n = seps.filter((q) => q.dept === x.id && q.date > from).length; return { label: x.label, value: x.value ? (n / x.value) * (12 / f.months) * 100 : 0, tip: L(`${n} حالة انفصال`, `${n} separations`) }; }).sort((a, b) => b.value - a.value);
+    const women = emps.filter((e) => e.gender === 'F').length;
+    const tenure = emps.length ? emps.reduce((t, e) => t + daysBetween(e.hireDate, today), 0) / emps.length / 365.25 : 0;
+    const salary = emps.length ? emps.reduce((t, e) => t + e.baseSalary, 0) / emps.length : 0;
+    // Pulse-survey score: demo figure, stable for a given filter.
+    const seed = [...`${f.office}|${f.dept}`].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7);
+    const sat = 3.9 + (seed % 7) / 10; const satDelta = [0.2, 0.1, 0.3, -0.1, 0.2][seed % 5];
+    const prev = f.months === 6 ? rate(addMonthsISO(today, -12), from) : null;
+    return { emps, now, start, growth: start ? ((now - start) / start) * 100 : 0, turnover: rate(from, today), turnoverPrev: prev, sepCount: sepsIn(from, today), trend, byDept, turnDept, women, men: now - women, tenure, salary, sat, satDelta,
+      hires: emps.slice().sort((a, b) => (a.hireDate < b.hireDate ? 1 : -1)).slice(0, 5) };
+  }
+  const delta = (v, unit, goodWhenUp, note) => {
+    if (v == null || !isFinite(v)) return `<span class="kd flat">${esc(note || '')}</span>`;
+    const flat = Math.abs(v) < 0.05; const up = v > 0; const good = flat ? null : up === goodWhenUp;
+    return `<span class="kd ${flat ? 'flat' : good ? 'good' : 'bad'}"><span aria-hidden="true">${flat ? '•' : up ? '▲' : '▼'}</span> <bdi>${up && !flat ? '+' : ''}${fmtN(v, 1)}${unit}</bdi>${note ? ` <span class="kn">${esc(note)}</span>` : ''}</span>`;
+  };
+  const kpiCard = (tone, ic, label, value, sub) => `<div class="kcard ${tone}"><span class="kic">${icon(ic, 18)}</span><div class="kbody"><span class="klabel">${esc(label)}</span><span class="kvalue">${value}</span>${sub}</div></div>`;
+
+  function lineChart(points, title) {
+    const vals = points.map((p) => p.value); const lo = Math.min(...vals); const hi = Math.max(...vals);
+    const pad = Math.max(2, (hi - lo) * 0.25); const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500].find((x) => (hi - lo + 2 * pad) / x <= 4) || 1000;
+    const y0 = Math.floor((lo - pad) / step) * step; const y1 = Math.ceil((hi + pad) / step) * step; const n = points.length;
+    const px = (i) => ((i + 0.5) / n) * 100; const py = (v) => 100 - ((v - y0) / (y1 - y0)) * 100;
+    const path = points.map((p, i) => `${i ? 'L' : 'M'}${px(i).toFixed(2)},${py(p.value).toFixed(2)}`).join(' ');
+    const ticks = []; for (let v = y0; v <= y1; v += step) ticks.push(v);
+    const every = n > 8 ? 2 : 1;
+    return `<div class="lchart" role="img" aria-label="${esc(title)}">
+      <div class="lc-y">${ticks.map((v) => `<span style="bottom:${100 - py(v)}%">${fmtN(v)}</span>`).join('')}</div>
+      <div class="lc-plot">${ticks.map((v) => `<i class="lc-grid" style="bottom:${100 - py(v)}%"></i>`).join('')}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="lc-area" d="${path} L${px(n - 1).toFixed(2)},100 L${px(0).toFixed(2)},100 Z"/><path class="lc-line" d="${path}"/></svg>
+        ${points.map((p, i) => `<div class="lc-col" style="left:${(i / n) * 100}%;width:${100 / n}%" data-tip="${esc(`<div>${esc(p.full)}</div><b>${fmtN(p.value)}</b>`)}"><i class="lc-dot ${i === n - 1 ? 'last' : ''}" style="top:${py(p.value)}%"></i></div>`).join('')}
+        <span class="lc-end" style="top:${py(points[n - 1].value)}%">${fmtN(points[n - 1].value)}</span></div>
+      <div class="lc-x">${points.map((p, i) => `<span>${(n - 1 - i) % every === 0 ? esc(p.label) : ''}</span>`).join('')}</div></div>
+      <table class="sr-only"><caption>${esc(title)}</caption><tbody>${points.map((p) => `<tr><th>${esc(p.full)}</th><td>${fmtN(p.value)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function donutChart(parts, centerValue, centerLabel, title) {
+    const total = parts.reduce((t, p) => t + p.value, 0) || 1; const R = 54; const C = 2 * Math.PI * R; const gap = parts.filter((p) => p.value).length > 1 ? 3 : 0; let off = 0;
+    const arcs = parts.map((p, i) => { const len = (p.value / total) * C; const seg = `<circle class="dn-seg s${i + 1}" cx="70" cy="70" r="${R}" stroke-dasharray="${Math.max(0, len - gap).toFixed(2)} ${(C - Math.max(0, len - gap)).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" data-tip="${esc(`<div>${esc(p.label)}</div><b>${fmtN(p.value)} · ${fmtN((p.value / total) * 100, 0)}%</b>`)}"/>`; off += len; return p.value ? seg : ''; }).join('');
+    return `<div class="donut"><div class="dn-ring" role="img" aria-label="${esc(title)}"><svg viewBox="0 0 140 140" width="150" height="150"><g transform="rotate(-90 70 70)">${arcs}</g></svg><div class="dn-center"><b>${centerValue}</b><span>${esc(centerLabel)}</span></div></div>
+      <ul class="dn-legend">${parts.map((p, i) => `<li><i class="s${i + 1}"></i><span>${esc(p.label)}</span><b>${fmtN((p.value / total) * 100, 0)}%</b><span class="subtle">${fmtN(p.value)}</span></li>`).join('')}</ul></div>`;
+  }
+  function gaugeChart(value, max, deltaHTML, title) {
+    const R = 80; const C = Math.PI * R; const len = Math.max(0, Math.min(1, (value - 1) / (max - 1))) * C;
+    const arc = 'M 20 100 A 80 80 0 0 1 180 100';
+    return `<div class="gauge" role="img" aria-label="${esc(`${title}: ${fmtN(value, 1)} / ${max}`)}"><svg viewBox="0 0 200 112" width="220" height="123" style="direction:ltr"><path class="gg-track" d="${arc}"/><path class="gg-value" d="${arc}" stroke-dasharray="${len.toFixed(1)} ${C.toFixed(1)}"/></svg>
+      <div class="gg-center"><b>${fmtN(value, 1)}</b><span>${esc(L(`من ${max}`, `out of ${max}`))}</span></div><div class="gg-scale"><span>1</span><span>${max}</span></div></div><div class="gg-delta">${deltaHTML}</div>`;
+  }
+  function hrAnalytics() {
+    const f = S.dash; const a = hrAnalyticsData(); const names = {}; D.employees.forEach((e) => { names[e.dept] = e.deptName; });
+    const period = L(`آخر ${f.months} شهرا`, `last ${f.months} months`);
+    const pct = (v) => `${fmtN(v, 1)}%`;
+    const filters = `<div class="dash-filters">
+        <select class="select" data-dash="office" aria-label="${esc(L('المكتب', 'Office'))}"><option value="">${esc(L('كل المكاتب', 'All offices'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}" ${f.office === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
+        <select class="select" data-dash="dept" aria-label="${esc(L('القسم', 'Department'))}"><option value="">${esc(L('كل الأقسام', 'All departments'))}</option>${Object.keys(names).map((k) => `<option value="${k}" ${f.dept === k ? 'selected' : ''}>${esc(T(names[k]))}</option>`).join('')}</select>
+        <div class="seg" role="group" aria-label="${esc(L('الفترة', 'Period'))}">${[6, 12].map((m) => `<button data-act="dash-months" data-v="${m}" aria-pressed="${f.months === m}">${esc(L(`${m} شهرا`, `${m} months`))}</button>`).join('')}</div>
+        ${f.office || f.dept ? `<button class="btn subtle sm" data-act="dash-reset">${icon('reset', 14)}${esc(L('إزالة التصفية', 'Clear filters'))}</button>` : ''}</div>`;
+    if (!a.now) return `${filters}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر المكتب أو القسم.', 'Change the office or the department.'))}</section>`;
+    return `${filters}
+      <div class="kgrid">
+        ${kpiCard('t-blue', 'people', L('إجمالي الموظفين', 'Total staff'), fmtN(a.now), delta(a.growth, '%', true, period))}
+        ${kpiCard('t-red', 'reset', L('معدل الدوران السنوي', 'Annual turnover rate'), pct(a.turnover), a.turnoverPrev == null ? delta(null, '', false, L(`${a.sepCount} حالة انفصال`, `${a.sepCount} separations`)) : delta(a.turnover - a.turnoverPrev, L(' نقطة', ' pts'), false, L('عن الفترة السابقة', 'vs previous period')))}
+        ${kpiCard('t-teal', 'money', L('متوسط الراتب الأساسي', 'Average base salary'), `${fmtN(Math.round(a.salary))}<small> ${esc(L('دولار', 'USD'))}</small>`, delta(null, '', true, L('شهريا', 'per month')))}
+        ${kpiCard('t-amber', 'chat', L('رضا الموظفين', 'Staff satisfaction'), `${fmtN(a.sat, 1)}<small> / 5</small>`, delta(a.satDelta, '', true, L('عن الاستبيان السابق', 'vs last survey')))}
+        ${kpiCard('t-blue', 'clock', L('متوسط مدة الخدمة', 'Average tenure'), `${fmtN(a.tenure, 1)}<small> ${esc(L('سنة', 'years'))}</small>`, delta(null, '', true, L('لكل الموظفين الحاليين', 'across current staff')))}
+      </div>
+      <div class="dgrid dg-a">
+        <section class="card"><h2>${esc(L('تطور عدد الموظفين', 'Headcount trend'))} <span class="count">${esc(period)}</span></h2>${lineChart(a.trend, L('تطور عدد الموظفين', 'Headcount trend'))}</section>
+        <section class="card"><h2>${esc(L('الدوران حسب القسم', 'Turnover by department'))}</h2>${bars(a.turnDept.slice(0, 7), { title: L('الدوران حسب القسم', 'Turnover by department'), fmt: (v) => `${fmtN(v, 0)}%` })}</section>
+        <section class="card"><h2>${esc(L('التوزيع حسب الجنس', 'Gender distribution'))}</h2>${donutChart([{ label: L('نساء', 'Women'), value: a.women }, { label: L('رجال', 'Men'), value: a.men }], fmtN(a.now), L('موظف', 'staff'), L('التوزيع حسب الجنس', 'Gender distribution'))}</section>
+      </div>
+      <div class="dgrid dg-b">
+        <section class="card"><h2>${esc(L('الموظفون حسب القسم', 'Staff by department'))}</h2>${bars(a.byDept.slice(0, 7), { title: L('الموظفون حسب القسم', 'Staff by department') })}</section>
+        <section class="card"><h2>${esc(L('مؤشر رضا الموظفين', 'Staff satisfaction score'))}</h2>${gaugeChart(a.sat, 5, delta(a.satDelta, '', true, L('عن الاستبيان السابق', 'vs last survey')), L('مؤشر رضا الموظفين', 'Staff satisfaction score'))}<p class="subtle gg-note">${esc(L('من استبيان نبض الموظفين.', 'From the staff pulse survey.'))}</p></section>
+        <section class="card"><h2>${esc(L('أحدث التعيينات', 'Recent hires'))}</h2><div class="table-wrap"><table class="hires"><thead><tr><th>${esc(L('الاسم', 'Name'))}</th><th class="hide-sm">${esc(L('القسم', 'Department'))}</th><th>${esc(L('تاريخ التعيين', 'Join date'))}</th></tr></thead><tbody>${a.hires.map((e) => `<tr class="clickable" data-act="emp" data-id="${e.id}"><td>${who(e, T(e.position))}</td><td class="hide-sm">${esc(T(e.deptName))}</td><td class="nowrap"><bdi>${esc(fmtD(e.hireDate))}</bdi></td></tr>`).join('')}</tbody></table></div></section>
+      </div>`;
+  }
+  EXT.actions['dash-months'] = (t) => { S.dash.months = +t.dataset.v; render(); };
+  EXT.actions['dash-reset'] = () => { S.dash.office = ''; S.dash.dept = ''; render(); };
+  EXT.onChange.push((t) => { if (t.dataset.dash) { S.dash[t.dataset.dash] = t.value; render(); return true; } });
+
   function vHrDash() {
     const pe = probEnding(); const ce = contractsEnding(30);
     const byOffice = D.OFFICES.map((o) => ({ label: T(o), value: active().filter((e) => e.office === o.id).length })).sort((a, b) => b.value - a.value);
@@ -621,15 +724,17 @@
     const pendHR = D.leaveRequests.filter((r) => r.status === 'PENDING_HR').length;
     return `
       <div class="page-head"><div><h1>${esc(L('لوحة متابعة الموارد البشرية', 'HR dashboard'))}</h1><p>${esc(`${T(D.ORG)} · ${fmtD(D.todayISO)}`)}</p></div><div class="btn-row"><button class="btn" data-act="nav" data-v="recruitment">${icon('brief', 16)}${esc(L('نشر وظيفة', 'Post vacancy'))}</button><button class="btn primary" data-act="nav" data-v="employees">${icon('people', 16)}${esc(L('سجل الموظفين', 'Open register'))}</button></div></div>
+      ${hrAnalytics()}
+      <h2 class="dash-sec">${esc(L('يحتاج متابعة', 'Needs attention'))}</h2>
       <div class="grid g-4 keep2">
-        ${tile(L('إجمالي الموظفين', 'Total staff'), fmtN(active().length), L(`${active().filter((e) => e.category === 'REGULAR').length} دائم`, `${active().filter((e) => e.category === 'REGULAR').length} regular`), 'nav-employees', 'people')}
+        ${tile(L('وظائف شاغرة مفتوحة', 'Open vacancies'), fmtN(D.vacancies.length), L(`${D.candidates.length} مرشحا`, `${D.candidates.length} candidates`), 'nav-recruitment', 'brief')}
         ${tile(L('تنتهي تجربتهم خلال 14 يوماً', 'Probation ending ≤ 14 days'), fmtN(pe.length), rule('LC-006'), null, 'clock')}
         ${tile(L('عقود تنتهي خلال 30 يوماً', 'Contracts ending ≤ 30 days'), fmtN(ce.length), rule('LC-040'), null, 'doc')}
         ${tile(L('إجازات بانتظار الموارد البشرية', 'Leave awaiting HR'), fmtN(pendHR), rule('LV-001'), 'nav-leave', 'cal')}
         ${tile(L('بلغوا حد التأخير', 'Reached late-mark threshold'), fmtN(lateCases().length), rule('WT-013'), null, 'warn')}
         ${tile(L('إقرارات ناقصة', 'Missing acknowledgements'), fmtN(missingAck().length), rule('ON-003'), 'nav-compliance', 'shield')}
         ${tile(L('فحص امتثال مستحق', 'Screening due'), fmtN(active().filter((e) => e.screening !== 'CLEARED').length), rule('CC-005'), 'nav-compliance', 'shield')}
-        ${tile(L('وظائف شاغرة مفتوحة', 'Open vacancies'), fmtN(D.vacancies.length), L(`${D.candidates.length} مرشحاً`, `${D.candidates.length} candidates`), 'nav-recruitment', 'brief')}
+        ${tile(L('الموظفون الدائمون', 'Regular staff'), fmtN(active().filter((e) => e.category === 'REGULAR').length), L(`من ${active().length}`, `of ${active().length}`), 'nav-employees', 'people')}
       </div>
       <div class="grid g-2">
         <section class="card"><h2>${esc(L('فترات تجربة تنتهي قريباً', 'Probation ending soon'))} <span class="count">${pe.length}</span></h2>${empMiniTable(pe, (e) => fmtD(e.probationEnd), (e) => `<button class="btn sm" data-act="appraisal-start" data-id="${e.id}" data-kind="PROBATION">${esc(L('بدء التقييم', 'Start appraisal'))}</button>`)}</section>
