@@ -739,6 +739,25 @@ Added after a CHRO-level gap review. Each module is implemented in the demo (`de
 |---|---|---|---|---|
 | CAT-007 | Incentive workers / community volunteers are a separate category: not employees, paid a fixed incentive, excluded from leave accrual, severance and payroll liabilities, and reported separately. | `employmentCategories.volunteer.*` | incentive `100`, isEmployee `false` | — |
 
+### 24.11 Security and confidentiality (SE)
+
+Full policy: [security.md](security.md).
+
+| ID | Rule | Parameter | Default | Enforcement |
+|---|---|---|---|---|
+| SE-001 | Every user signs in with multi-factor authentication. | `security.mfaRequired` | `true` | Block |
+| SE-002 | An idle session ends after N minutes. | `security.sessionTimeoutMinutes` | `30` | Block |
+| SE-003 | Access follows the role and the reporting line only. No shared accounts. | — | — | Block |
+| SE-004 | People who administer the Azure resources have no role inside HRMO. Administrator access is granted for a limited time and logged. | `security.adminAccess` | `JUST_IN_TIME` | Block |
+| SE-005 | Every read of pay, private data, case files and reports is logged with who, whom and when. | `security.logSensitiveAccess` | `true` | Block |
+| SE-006 | An export needs a stated purpose. An export above N records needs approval. | `security.exportRequiresPurpose`, `security.bulkExportThresholdRecords`, `security.bulkExportApprover` | `true`, `50`, `CD` | Block |
+| SE-007 | The account is disabled on the last working day, as a step of the separation checklist. | `security.disableAccountOnSeparation` | `true` | Block |
+| SE-008 | Role assignments and the access log are reviewed every N months. | `security.accessReviewMonths` | `3` | Warn |
+| SE-009 | The database, the document store and the key vault carry delete locks. | `protectFromDeletion` (infrastructure) | `true` | Block |
+| SE-010 | A full restore from backup is tested every N months. | `security.restoreTestMonths` | `6` | Warn |
+| SE-011 | Records of former staff are kept N years after separation, then anonymised. | `security.retentionYearsAfterSeparation` | `7` | Warn |
+| SE-012 | An independent penetration test is done before go-live and every N months. | `security.penetrationTestMonths` | `12` | Warn |
+
 ---
 
 *End of document.*

@@ -62,7 +62,13 @@ These are identifiers, not secrets, so they go under **Variables**.
 
 ## Removing everything
 
-Delete the resource group `hrmo-rg`, the app registration `hrmo-github-deploy` and the group `HRMO SQL Admins`. Billing stops when the resource group is deleted.
+The database server, the storage account and the key vault carry delete locks, so deleting the resource group fails until the locks are removed. This is deliberate.
+
+1. In the portal open each of the three resources → **Locks** → delete `hrmo-do-not-delete`.
+2. Delete the resource group `hrmo-rg`. Billing stops here.
+3. Delete the app registration `hrmo-github-deploy` and the group `HRMO SQL Admins`.
+
+The key vault stays recoverable for 30 days after deletion (purge protection). For a pilot you will throw away, add the repository variable `PROTECT_FROM_DELETION` = `false` before the first run.
 
 ## Current state
 
