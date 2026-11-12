@@ -25,7 +25,7 @@
     readActivity: []
   };
   // Extension layer: feature modules (assets/modules/*.js) register views, actions, overlays and hooks here.
-  const EXT = { state: {}, saved: {}, actions: {}, overlays: {}, onChange: [], onInput: [], apTypes: {}, onDecide: [], homeBanners: [], empSections: [], empFooter: [], hrDash: [], cdDash: [], topbar: [], badge: {} };
+  const EXT = { afterRender: [], state: {}, saved: {}, actions: {}, overlays: {}, onChange: [], onInput: [], apTypes: {}, onDecide: [], homeBanners: [], empSections: [], empFooter: [], hrDash: [], cdDash: [], topbar: [], badge: {} };
   const empById = new Map(D.employees.map((e) => [e.id, e]));
   const me = () => empById.get(D.personas.EMPLOYEE);
   const persona = () => empById.get(D.personas[S.role]);
@@ -1232,6 +1232,7 @@
     syncIndeterminate();
     lastKey = key;
     save();
+    EXT.afterRender.forEach((fn) => fn());
   }
   function openOverlay(o) { S.overlay = o; render(); setTimeout(() => { const f = document.querySelector('.drawer, .modal'); if (f) { const b = f.querySelector('button, input, textarea, select'); if (b) b.focus(); } }, 0); }
   function closeOverlay() { S.overlay = null; render(); }

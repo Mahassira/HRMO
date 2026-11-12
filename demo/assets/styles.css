@@ -672,3 +672,58 @@ table.hires td, table.hires th { padding-block: 7px; }
   .kcard .kic { width: 30px; height: 30px; }
   .lchart { grid-template-rows: 160px auto; }
 }
+
+/* ---------- 19. Organisation chart diagram ---------- */
+.oc-tools { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.oc-search { position: relative; flex: 1 1 260px; max-width: 380px; }
+.oc-search .search-inline { width: 100%; }
+.oc-results { position: absolute; inset-inline: 0; top: calc(100% + 4px); z-index: 30; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--sh-3, var(--sh-2)); max-height: 320px; overflow: auto; }
+.oc-results button { display: grid; gap: 2px; width: 100%; text-align: start; padding: 8px 12px; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+.oc-results button:hover, .oc-results button:focus-visible { background: var(--surface-hover); }
+.oc-zoom { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: 0 2px; }
+.oc-zoom span { min-width: 46px; text-align: center; font-size: var(--fs-table); font-variant-numeric: tabular-nums; }
+.oc-zoom .iconbtn { font-size: 18px; line-height: 1; }
+.oc-card { overflow: hidden; }
+.oc-wrap { overflow: auto; height: min(70vh, 760px); min-height: 380px; cursor: grab; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 22px 22px; background-color: var(--surface-2); outline-offset: -2px; }
+.oc-wrap.dragging { cursor: grabbing; user-select: none; }
+.oc-hint { margin: 0; }
+.oc-nextno { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+
+/* The tree is laid out left to right in both languages; text inside each box follows the page language. */
+.oc { --oc-w: 164px; --oc-line: var(--border-strong); direction: ltr; display: inline-block; min-width: 100%; padding: 28px 32px 40px; box-sizing: border-box; }
+.oc ul { list-style: none; margin: 0; padding: 22px 0 0; position: relative; display: flex; justify-content: center; }
+.oc ul.oc-root { padding-top: 0; }
+.oc li { position: relative; padding: 22px 8px 0; display: flex; flex-direction: column; align-items: center; }
+.oc ul.oc-root > li { padding-top: 0; }
+.oc li::before, .oc li::after { content: ''; position: absolute; top: 0; right: 50%; width: 50%; height: 22px; border-top: 1.5px solid var(--oc-line); }
+.oc li::after { right: auto; left: 50%; border-left: 1.5px solid var(--oc-line); }
+.oc li:only-child::before { display: none; }
+.oc li:only-child::after { border-top: 0; }
+.oc li:first-child::before, .oc li:last-child::after { border-top: 0; }
+.oc li:last-child::before { border-right: 1.5px solid var(--oc-line); border-top-right-radius: 8px; }
+.oc li:last-child::after { border-left: 0; }
+.oc li:only-child::after { border-left: 1.5px solid var(--oc-line); }
+.oc li:first-child::after { border-top-left-radius: 8px; }
+.oc li:only-child::after { border-radius: 0; }
+.oc ul.oc-root > li::before, .oc ul.oc-root > li::after { display: none; }
+.oc ul ul::before { content: ''; position: absolute; top: 0; left: 50%; height: 22px; border-left: 1.5px solid var(--oc-line); }
+
+.oc-box { position: relative; width: var(--oc-w); background: var(--surface); border: 1px solid var(--border-strong); border-top: 3px solid var(--primary); border-radius: var(--r-md); box-shadow: var(--sh-1); transition: box-shadow var(--t-fast), border-color var(--t-fast); }
+.oc-box:hover { box-shadow: var(--sh-2); border-color: var(--primary); }
+.oc-main { display: grid; gap: 2px; width: 100%; padding: 8px 10px 9px; border: 0; background: none; font: inherit; color: inherit; text-align: center; cursor: pointer; border-radius: inherit; }
+.oc-name { font-weight: var(--fw-semibold); font-size: var(--fs-table); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oc-no { font-size: var(--fs-caption); color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: .2px; }
+.oc-title { font-size: var(--fs-caption); color: var(--text-2); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.7em; }
+.oc-toggle { position: absolute; left: 50%; bottom: -11px; transform: translateX(-50%); z-index: 2; display: inline-flex; align-items: center; gap: 2px; height: 22px; padding: 0 6px 0 8px; border-radius: 11px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; cursor: pointer; direction: ltr; }
+.oc-toggle:hover { border-color: var(--primary); color: var(--primary); }
+.oc-toggle .chev { display: grid; transition: transform var(--t-fast); transform: rotate(-90deg); }
+.oc-toggle .chev.open { transform: none; }
+.oc-box.me { background: var(--primary-50); }
+.oc-box.hit { outline: 3px solid var(--primary); outline-offset: 2px; }
+.oc-box.new { border-top-color: var(--success); }
+.oc-tag { position: absolute; top: -10px; inset-inline-end: 8px; background: var(--success); color: #fff; font-size: 10px; font-weight: var(--fw-semibold); padding: 1px 7px; border-radius: 9px; }
+.oc-team { display: grid; gap: 8px; padding: 10px; background: color-mix(in srgb, var(--surface) 55%, transparent); border: 1px dashed var(--oc-line); border-radius: var(--r-lg); }
+.oc-team .oc-box { border-top-color: var(--border-strong); box-shadow: none; }
+.oc-team .oc-box.new { border-top-color: var(--success); }
+@media (max-width: 720px) { .oc-wrap { height: 68vh; } .oc-tools .btn-row { width: 100%; } .oc-search { max-width: none; } }
+@media print { .oc-wrap { height: auto; overflow: visible; } }
