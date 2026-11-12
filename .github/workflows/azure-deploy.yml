@@ -7,7 +7,8 @@ name: Deploy to Azure
 # Repository variables (Settings → Secrets and variables → Actions → Variables):
 #   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, SQL_ADMIN_GROUP_ID
 # Optional: AZURE_RESOURCE_GROUP (default hrmo-rg), SQL_ADMIN_GROUP_NAME (default "HRMO SQL Admins"),
-#           SWA_SKU (Standard | Free, default Standard), SQL_SKU (Basic | S0 | S1, default Basic)
+#           SWA_SKU (Standard | Free, default Standard), SQL_SKU (Basic | S0 | S1, default Basic),
+#           PROTECT_FROM_DELETION (true | false, default true)
 
 on:
   workflow_dispatch:
@@ -53,6 +54,7 @@ jobs:
               sqlAdminGroupName="${{ vars.SQL_ADMIN_GROUP_NAME || 'HRMO SQL Admins' }}" \
               staticWebAppSku="${{ vars.SWA_SKU || 'Standard' }}" \
               sqlSku="${{ vars.SQL_SKU || 'Basic' }}" \
+              protectFromDeletion=${{ vars.PROTECT_FROM_DELETION || 'true' }} \
             --query properties.outputs -o json > outputs.json
           echo "webName=$(jq -r .webName.value outputs.json)" >> "$GITHUB_OUTPUT"
           echo "webUrl=$(jq -r .webUrl.value outputs.json)" >> "$GITHUB_OUTPUT"
