@@ -586,8 +586,8 @@ td .who .n { font-weight: var(--fw-medium); color: var(--text); }
 }
 
 /* ---------- 18. Analytics dashboard ---------- */
-:root { --series-1: #2878D0; --series-2: #1BAF7A; --chart-grid: #EDF0F3; }
-:root[data-theme="dark"] { --series-1: #4C97E8; --series-2: #199E70; --chart-grid: #263143; }
+:root { --series-1: #2878D0; --series-2: #1BAF7A; --series-3: #EB6834; --chart-grid: #EDF0F3; }
+:root[data-theme="dark"] { --series-1: #4C97E8; --series-2: #199E70; --series-3: #D95926; --chart-grid: #263143; }
 .dash-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
 .dash-filters .select { width: auto; min-width: 150px; }
 .dash-sec { margin: var(--s-2) 0 0; font-size: var(--fs-section); font-weight: var(--fw-semibold); color: var(--text-2); }
@@ -637,6 +637,7 @@ td .who .n { font-weight: var(--fw-medium); color: var(--text); }
 .dn-seg:hover { stroke-width: 23; }
 .dn-seg.s1, .dn-legend i.s1 { stroke: var(--series-1); background: var(--series-1); }
 .dn-seg.s2, .dn-legend i.s2 { stroke: var(--series-2); background: var(--series-2); }
+.dn-seg.s3, .dn-legend i.s3 { stroke: var(--series-3); background: var(--series-3); }
 .dn-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
 .dn-center b { font-size: 22px; line-height: 1.1; font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
 .dn-center span { font-size: var(--fs-caption); color: var(--text-2); }

@@ -432,6 +432,45 @@
   }
   function lastWorkingDayOfMonth() { let d = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0); while (!isWorkDay(d)) d = addDays(d, -1); return d; }
 
+
+  // ---------- Employee analytics (home) ----------
+  const RATING_SCORE = { OUTSTANDING: 5, VERY_GOOD: 4, SATISFACTORY: 3, NEEDS_IMPROVEMENT: 2, UNSATISFACTORY: 1 };
+  function empAnalytics(e, b, pend, ts, tasks) {
+    const base = TODAY; const seed = Number(e.id.slice(1));
+    // Hours per month: working days of the month minus leave, plus a little overtime. Current month is to date.
+    const hours = [];
+    // The chart shows complete months only, so the month in progress does not look like a drop.
+    for (let i = 6; i >= 1; i--) {
+      const first = new Date(base.getFullYear(), base.getMonth() - i, 1); const last = new Date(base.getFullYear(), base.getMonth() - i + 1, 0);
+      const off = (seed + i * 5) % 4; const extra = (seed * 3 + i * 7) % 7;
+      hours.push({ label: new Intl.DateTimeFormat(locale(), { month: 'short' }).format(first), full: new Intl.DateTimeFormat(locale(), { month: 'long', year: 'numeric' }).format(first), value: Math.max(0, (workingDays(iso(first), iso(last)) - off) * D.POLICY.workWeek.hoursPerDay + extra) });
+    }
+    const hoursNow = workingDays(iso(new Date(base.getFullYear(), base.getMonth(), 1)), iso(base)) * D.POLICY.workWeek.hoursPerDay;
+    const objs = (EXT.state.objectives || []).filter((o) => o.empId === e.id);
+    const objAvg = objs.length ? objs.reduce((t, o) => t + o.progress, 0) / objs.length : 0;
+    const trDone = D.TRAININGS.filter((t) => e.trainingsDone.includes(t.code)).length;
+    const leaveByType = [{ label: T(LEAVE.ANNUAL), value: b.annual.taken }, { label: T(LEAVE.SICK), value: Math.max(0, b.sick.taken) }, { label: T(LEAVE.UNPAID), value: b.unpaid.used }, { label: T(LEAVE.COMP), value: Math.max(0, e.leave.compDays - b.comp.available) }];
+    const days = (v) => `${fmtN(v, v % 1 ? 1 : 0)} ${L('يوم', 'd')}`;
+    const tsLabel = ts.status === 'DRAFT' ? L('كشف الدوام لم يسلم بعد', 'Timesheet not submitted yet') : ts.status === 'SUBMITTED' ? L('كشف الدوام بانتظار المدير', 'Timesheet awaiting manager') : L('كشف الدوام معتمد', 'Timesheet approved');
+    return `<div class="kgrid">
+        ${kpiCard('t-blue', 'cal', L('الإجازة السنوية المتاحة', 'Annual leave available'), `${fmtN(b.annual.available, 1)}<small> ${esc(L('يوم', 'days'))}</small>`, delta(null, '', true, L(`من ${fmtN(b.annual.accrued, 1)} مستحقة هذا العام`, `of ${fmtN(b.annual.accrued, 1)} accrued this year`)))}
+        ${kpiCard('t-teal', 'clock', L('ساعات العمل هذا الشهر', 'Hours worked this month'), `${fmtN(hoursNow)}<small> ${esc(L('ساعة', 'h'))}</small>`, delta(null, '', true, tsLabel))}
+        ${kpiCard('t-amber', 'approve', L('طلبات قيد الموافقة', 'Requests pending'), fmtN(pend.length), delta(null, '', true, pend.length ? T(LSTATUS[pend[0].status]) : L('لا يوجد', 'None')))}
+        ${kpiCard('t-blue', 'flag', L('تقدم أهدافي', 'My objectives progress'), `${fmtN(objAvg, 0)}%`, delta(null, '', true, L(`${objs.length} أهداف هذا العام`, `${objs.length} objectives this year`)))}
+        ${kpiCard(trDone === D.TRAININGS.length ? 't-teal' : 't-red', 'shield', L('التدريب الإلزامي', 'Mandatory training'), `${fmtN(trDone)}<small> / ${fmtN(D.TRAININGS.length)}</small>`, delta(null, '', true, trDone === D.TRAININGS.length ? L('مكتمل', 'Complete') : (D.TRAININGS.length - trDone === 1 ? L('دورة واحدة متبقية', '1 course left') : L(`${D.TRAININGS.length - trDone} دورات متبقية`, `${D.TRAININGS.length - trDone} courses left`))))}
+      </div>
+      <div class="dgrid dg-a">
+        <section class="card"><h2>${esc(L('مهامي', 'My tasks'))} <span class="count">${tasks.length}</span></h2>
+          <div class="list">${tasks.map((t) => `<div class="list-item">${icon(t.ic)}<div class="grow"><div class="t">${esc(t.t)}</div><div class="subtle">${esc(t.s)}</div></div>${rule(t.r)}${t.act ? `<button class="btn sm" data-act="${t.act}" data-v="${t.v}">${esc(L('فتح', 'Open'))}</button>` : ''}</div>`).join('')}</div></section>
+        <section class="card"><h2>${esc(L('أهدافي', 'My objectives'))}</h2>${objs.length ? bars(objs.map((o) => ({ label: T(o), value: o.progress, tip: L(`الموعد ${fmtD(o.due)}`, `Due ${fmtD(o.due)}`) })), { title: L('تقدم أهدافي', 'My objectives progress'), fmt: (v) => `${fmtN(v)}%` }) : `<div class="empty">${esc(L('لا أهداف مسجلة', 'No objectives yet'))}</div>`}</section>
+        <section class="card"><h2>${esc(L('رصيد الإجازة السنوية', 'Annual leave balance'))}</h2>${donutChart([{ label: L('متاح', 'Available'), value: Math.max(0, b.annual.available) }, { label: L('قيد الموافقة', 'Pending'), value: b.annual.pending }, { label: L('مأخوذ', 'Taken'), value: b.annual.taken }], fmtN(Math.max(0, b.annual.available), 1), L('يوم متاح', 'days left'), L('رصيد الإجازة السنوية', 'Annual leave balance'))}</section>
+      </div>
+      <div class="dgrid dg-b">
+        <section class="card"><h2>${esc(L('إجازاتي هذا العام حسب النوع', 'My leave this year by type'))}</h2>${bars(leaveByType, { title: L('إجازاتي حسب النوع', 'My leave by type'), fmt: days })}</section>
+        <section class="card"><h2>${esc(L('آخر تقييم أداء', 'Latest performance rating'))}</h2>${gaugeChart(RATING_SCORE[e.rating] || 3, 5, badge('b-info', T(RATING[e.rating])), L('آخر تقييم أداء', 'Latest performance rating'))}</section>
+        <section class="card"><h2>${esc(L('ساعات عملي الشهرية', 'My monthly working hours'))} <span class="count">${esc(L('آخر 6 أشهر مكتملة', 'last 6 complete months'))}</span></h2>${lineChart(hours, L('ساعات عملي الشهرية', 'My monthly working hours'))}</section>
+      </div>`;
+  }
   function vEmpHome() {
     const e = me(); const b = balances(e); const mgr = empById.get(e.managerId);
     const pend = myRequests().filter((r) => r.status.startsWith('PENDING'));
@@ -446,23 +485,15 @@
       <div class="page-head"><div><h1>${esc(L(`مرحباً ${e.name.ar.split(' ')[0]}`, `Welcome, ${e.name.en.split(' ')[0]}`))}</h1><p>${esc(`${T(e.position)} · ${T(e.deptName)} · ${officeName(e.office)}`)}</p></div>
         <div class="btn-row"><button class="btn primary" data-act="nav" data-v="leave">${icon('cal', 16)}${esc(L('طلب إجازة', 'Request leave'))}</button></div></div>
       ${EXT.homeBanners.map((fn) => fn()).join('')}
-      <div class="grid g-4 keep2">
-        ${tile(L('الإجازة السنوية المتاحة', 'Annual leave available'), `${fmtN(b.annual.available, 2)}`, L(`من ${fmtN(b.annual.accrued, 2)} مستحقة هذا العام`, `of ${fmtN(b.annual.accrued, 2)} accrued this year`), 'nav-leave', 'cal')}
-        ${tile(L('المرضية براتب كامل', 'Sick leave (full pay)'), fmtN(b.sick.full), L(`+ ${b.sick.half} بنصف راتب`, `+ ${b.sick.half} at half pay`), 'nav-leave', 'cal')}
-        ${tile(L('الرصيد التعويضي', 'Compensatory balance'), fmtN(b.comp.available), L('يسقط بعد 10 أيام', 'Expires after 10 days'), 'nav-leave', 'clock')}
-        ${tile(L('طلبات قيد الموافقة', 'Requests pending'), fmtN(pend.length), pend.length ? T(LSTATUS[pend[0].status]) : L('لا يوجد', 'None'), 'nav-leave', 'approve')}
-      </div>
+      ${empAnalytics(e, b, pend, ts, tasks)}
       <div class="grid g-21">
-        <section class="card"><h2>${esc(L('مهامي', 'My tasks'))} <span class="count">${tasks.length}</span></h2>
-          <div class="list">${tasks.map((t) => `<div class="list-item">${icon(t.ic)}<div class="grow"><div class="t">${esc(t.t)}</div><div class="subtle">${esc(t.s)}</div></div>${rule(t.r)}${t.act ? `<button class="btn sm" data-act="${t.act}" data-v="${t.v}">${esc(L('فتح', 'Open'))}</button>` : ''}</div>`).join('')}</div>
-        </section>
+        <section class="card"><div class="card-head"><h2>${esc(L('آخر طلباتي', 'My recent requests'))}</h2><button class="btn subtle sm" data-act="nav" data-v="leave">${esc(L('عرض الكل', 'View all'))}</button></div>${reqTable(myRequests().slice(0, 4), false)}</section>
         <section class="card"><h2>${esc(L('مديري المباشر', 'My line manager'))}</h2>
           <div class="list-item" style="border:0">${avatar(mgr)}<div class="grow"><div class="t">${esc(T(mgr.name))}</div><div class="subtle">${esc(T(mgr.position))}</div></div><button class="iconbtn" data-act="decor" title="${esc(L('دردشة', 'Chat'))}">${icon('chat')}</button></div>
           <h2 style="margin-top:12px">${esc(L('العطل القادمة', 'Upcoming holidays'))}</h2>
           <div class="list">${upcoming.map((h) => `<div class="list-item">${icon('cal')}<div class="grow"><div class="t">${esc(T(h))}</div><div class="subtle">${esc(fmtD(h.date))}</div></div></div>`).join('') || `<div class="empty">—</div>`}</div>
         </section>
-      </div>
-      <section class="card"><div class="card-head"><h2>${esc(L('آخر طلباتي', 'My recent requests'))}</h2><button class="btn subtle sm" data-act="nav" data-v="leave">${esc(L('عرض الكل', 'View all'))}</button></div>${reqTable(myRequests().slice(0, 4), false)}</section>`;
+      </div>`;
   }
 
   function reqTable(list, showEmp, actions) {
@@ -684,15 +715,19 @@
     return `<div class="gauge" role="img" aria-label="${esc(`${title}: ${fmtN(value, 1)} / ${max}`)}"><svg viewBox="0 0 200 112" width="220" height="123" style="direction:ltr"><path class="gg-track" d="${arc}"/><path class="gg-value" d="${arc}" stroke-dasharray="${len.toFixed(1)} ${C.toFixed(1)}"/></svg>
       <div class="gg-center"><b>${fmtN(value, 1)}</b><span>${esc(L(`من ${max}`, `out of ${max}`))}</span></div><div class="gg-scale"><span>1</span><span>${max}</span></div></div><div class="gg-delta">${deltaHTML}</div>`;
   }
-  function hrAnalytics() {
-    const f = S.dash; const a = hrAnalyticsData(); const names = {}; D.employees.forEach((e) => { names[e.dept] = e.deptName; });
-    const period = L(`آخر ${f.months} شهرا`, `last ${f.months} months`);
-    const pct = (v) => `${fmtN(v, 1)}%`;
-    const filters = `<div class="dash-filters">
+  function dashFilters() {
+    const f = S.dash; const names = {}; D.employees.forEach((e) => { names[e.dept] = e.deptName; });
+    return `<div class="dash-filters">
         <select class="select" data-dash="office" aria-label="${esc(L('المكتب', 'Office'))}"><option value="">${esc(L('كل المكاتب', 'All offices'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}" ${f.office === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
         <select class="select" data-dash="dept" aria-label="${esc(L('القسم', 'Department'))}"><option value="">${esc(L('كل الأقسام', 'All departments'))}</option>${Object.keys(names).map((k) => `<option value="${k}" ${f.dept === k ? 'selected' : ''}>${esc(T(names[k]))}</option>`).join('')}</select>
         <div class="seg" role="group" aria-label="${esc(L('الفترة', 'Period'))}">${[6, 12].map((m) => `<button data-act="dash-months" data-v="${m}" aria-pressed="${f.months === m}">${esc(L(`${m} شهرا`, `${m} months`))}</button>`).join('')}</div>
         ${f.office || f.dept ? `<button class="btn subtle sm" data-act="dash-reset">${icon('reset', 14)}${esc(L('إزالة التصفية', 'Clear filters'))}</button>` : ''}</div>`;
+  }
+  function hrAnalytics() {
+    const f = S.dash; const a = hrAnalyticsData(); const names = {}; D.employees.forEach((e) => { names[e.dept] = e.deptName; });
+    const period = L(`آخر ${f.months} شهرا`, `last ${f.months} months`);
+    const pct = (v) => `${fmtN(v, 1)}%`;
+    const filters = dashFilters();
     if (!a.now) return `${filters}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر المكتب أو القسم.', 'Change the office or the department.'))}</section>`;
     return `${filters}
       <div class="kgrid">
@@ -959,30 +994,40 @@
     return m;
   }
   function vCdDash() {
-    const n = active().length;
-    const payroll = active().reduce((s, e) => s + e.baseSalary, 0);
-    const pend = D.approvals.filter((a) => a.status === 'PENDING').length;
-    const turnover = (D.separations.length / ((n + n + D.separations.length) / 2)) * 100;
-    const liability = active().filter((e) => e.category === 'REGULAR').reduce((s, e) => s + Math.max(0, balances(e).annual.available) * (e.baseSalary / D.POLICY.workingDaysPerMonth), 0);
-    const cg = costByGrant();
-    const grantBars = D.GRANTS.map((g) => ({ label: `${g.id} · ${T(g)}`, value: cg[g.id].cost, tip: L(`${fmtN(cg[g.id].staff, 1)} موظف (مكافئ دوام كامل)`, `${fmtN(cg[g.id].staff, 1)} FTE`) })).sort((a, b) => b.value - a.value);
-    const risk = D.GRANTS.filter((g) => daysBetween(D.todayISO, g.end) <= 120).map((g) => ({ g, staff: active().filter((e) => e.alloc.some((a) => a.grant === g.id)), cost: cg[g.id].cost }));
-    return `
-      <div class="page-head"><div><h1>${esc(L('اللوحة التنفيذية', 'Executive dashboard'))}</h1><p>${esc(`${T(D.ORG)} · ${fmtD(D.todayISO)}`)}</p></div><button class="btn primary" data-act="nav" data-v="approvals">${icon('approve', 16)}${esc(L(`الموافقات (${pend})`, `Approvals (${pend})`))}</button></div>
-      <div class="grid g-4 keep2">
-        ${tile(L('القوى العاملة', 'Workforce'), fmtN(n), L(`${D.OFFICES.length} مكاتب`, `${D.OFFICES.length} offices`), 'nav-workforce', 'people')}
-        ${tile(L('كلفة الرواتب الشهرية', 'Monthly payroll cost'), money(payroll), L('الرواتب الأساسية', 'Base salaries'), null, 'money')}
-        ${tile(L('معدل الدوران (12 شهراً)', 'Turnover (12 months)'), `${fmtN(turnover, 1)}%`, L(`${D.separations.length} حالة انفصال`, `${D.separations.length} separations`), null, 'chart')}
-        ${tile(L('التزام الإجازات المستحقة', 'Accrued leave liability'), money(liability), rule('LV-015'), null, 'cal')}
+    const a = hrAnalyticsData(); const f = S.dash; const emps = a.emps;
+    const payroll = emps.reduce((t, e) => t + e.baseSalary, 0);
+    const pendList = D.approvals.filter((x) => x.status === 'PENDING'); const pend = pendList.length;
+    const liability = emps.filter((e) => e.category === 'REGULAR').reduce((t, e) => t + Math.max(0, balances(e).annual.available) * (e.baseSalary / D.POLICY.workingDaysPerMonth), 0);
+    const cg = {}; D.GRANTS.forEach((g) => { cg[g.id] = { cost: 0, staff: 0 }; });
+    emps.forEach((e) => e.alloc.forEach((x) => { cg[x.grant].cost += (e.baseSalary * x.pct) / 100; cg[x.grant].staff += x.pct / 100; }));
+    const grantBars = D.GRANTS.map((g) => ({ label: `${g.id} · ${T(g)}`, value: cg[g.id].cost, tip: L(`${fmtN(cg[g.id].staff, 1)} موظف (مكافئ دوام كامل)`, `${fmtN(cg[g.id].staff, 1)} FTE`) })).filter((x) => x.value > 0).sort((x, y) => y.value - x.value);
+    const risk = D.GRANTS.filter((g) => daysBetween(D.todayISO, g.end) <= 120).map((g) => ({ g, staff: emps.filter((e) => e.alloc.some((x) => x.grant === g.id)), cost: cg[g.id].cost })).filter((r) => r.staff.length);
+    const byOffice = D.OFFICES.map((o) => ({ label: T(o), value: emps.filter((e) => e.office === o.id).length })).filter((x) => x.value).sort((x, y) => y.value - x.value);
+    const period = L(`آخر ${f.months} شهرا`, `last ${f.months} months`);
+    const k = (v) => (v >= 1000 ? `${fmtN(v / 1000, v >= 100000 ? 0 : 1)}${L(' ألف', 'k')}` : fmtN(v));
+    const head = `<div class="page-head"><div><h1>${esc(L('اللوحة التنفيذية', 'Executive dashboard'))}</h1><p>${esc(`${T(D.ORG)} · ${fmtD(D.todayISO)}`)}</p></div><button class="btn primary" data-act="nav" data-v="approvals">${icon('approve', 16)}${esc(L(`الموافقات (${pend})`, `Approvals (${pend})`))}</button></div>`;
+    if (!a.now) return `${head}${dashFilters()}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر المكتب أو القسم.', 'Change the office or the department.'))}</section>`;
+    return `${head}
+      ${dashFilters()}
+      <div class="kgrid">
+        ${kpiCard('t-blue', 'people', L('القوى العاملة', 'Workforce'), fmtN(a.now), delta(a.growth, '%', true, period))}
+        ${kpiCard('t-teal', 'money', L('كلفة الرواتب الشهرية', 'Monthly payroll cost'), `${k(payroll)}<small> ${esc(L('دولار', 'USD'))}</small>`, delta(null, '', true, L('الرواتب الأساسية', 'Base salaries')))}
+        ${kpiCard('t-red', 'reset', L('معدل الدوران السنوي', 'Annual turnover rate'), `${fmtN(a.turnover, 1)}%`, a.turnoverPrev == null ? delta(null, '', false, L(`${a.sepCount} حالة انفصال`, `${a.sepCount} separations`)) : delta(a.turnover - a.turnoverPrev, L(' نقطة', ' pts'), false, L('عن الفترة السابقة', 'vs previous period')))}
+        ${kpiCard('t-amber', 'cal', L('التزام الإجازات المستحقة', 'Accrued leave liability'), `${k(liability)}<small> ${esc(L('دولار', 'USD'))}</small>`, `<span class="kd flat">${rule('LV-015')}</span>`)}
+        ${kpiCard(pend ? 't-amber' : 't-teal', 'approve', L('بانتظار اعتمادك', 'Awaiting your approval'), fmtN(pend), delta(null, '', true, pend ? L('قرارات معلقة', 'decisions pending') : L('لا شيء معلق', 'Nothing pending')))}
       </div>
-      <div class="grid g-21">
-        <section class="card"><h2>${esc(L('كلفة الرواتب الشهرية حسب المنحة', 'Monthly staff cost by grant'))}</h2>${bars(grantBars, { fmt: (v) => money(v), title: L('الكلفة حسب المنحة', 'Cost by grant') })}<p class="subtle" style="margin:10px 0 0">${esc(L('محسوبة من نسب توزيع الوظائف على المنح.', 'Calculated from position-to-grant allocation percentages.'))} ${rule('ORG-004')}</p></section>
+      <div class="dgrid dg-a">
+        <section class="card"><div class="card-head"><h2>${esc(L('بانتظار اعتمادك', 'Awaiting your approval'))} <span class="count">${pend}</span></h2><button class="btn subtle sm" data-act="nav" data-v="approvals">${esc(L('عرض الكل', 'View all'))}</button></div>${apList(pendList.slice(0, 4))}</section>
         <section class="card"><h2>${icon('warn')} ${esc(L('مخاطر التمويل', 'Funding risk'))}</h2>
-          ${risk.length ? risk.map((r) => `<div class="msg warn" style="margin-bottom:8px">${icon('warn', 16)}<div><b>${esc(r.g.id)} · ${esc(T(r.g))}</b><br>${esc(L(`تنتهي ${fmtD(r.g.end)} · ${r.staff.length} موظفاً مموّلون منها · ${money(r.cost)} شهرياً`, `Ends ${fmtD(r.g.end)} · ${r.staff.length} staff funded · ${money(r.cost)}/month`))}</div></div>`).join('') : `<div class="empty">—</div>`}
-          <p class="subtle" style="margin:0">${esc(L('خطط للتجديد أو النقل أو التقليص قبل انتهاء المنحة.', 'Plan renewal, transfer or redundancy before the grant ends.'))} ${rule('SP-010')}</p>
-        </section>
+          ${risk.length ? risk.map((r) => `<div class="msg warn" style="margin-bottom:8px">${icon('warn', 16)}<div><b>${esc(r.g.id)} · ${esc(T(r.g))}</b><br>${esc(L(`تنتهي ${fmtD(r.g.end)} · ${r.staff.length} موظفا ممولون منها · ${money(r.cost)} شهريا`, `Ends ${fmtD(r.g.end)} · ${r.staff.length} staff funded · ${money(r.cost)}/month`))}</div></div>`).join('') : `<div class="empty">${esc(L('لا منح تنتهي خلال 120 يوما', 'No grant ends within 120 days'))}</div>`}
+          <p class="subtle" style="margin:0">${esc(L('خطط للتجديد أو النقل أو التقليص قبل انتهاء المنحة.', 'Plan renewal, transfer or redundancy before the grant ends.'))} ${rule('SP-010')}</p></section>
+        <section class="card"><h2>${esc(L('التوزيع حسب الجنس', 'Gender distribution'))}</h2>${donutChart([{ label: L('نساء', 'Women'), value: a.women }, { label: L('رجال', 'Men'), value: a.men }], fmtN(a.now), L('موظف', 'staff'), L('التوزيع حسب الجنس', 'Gender distribution'))}</section>
       </div>
-      <section class="card"><div class="card-head"><h2>${esc(L('بانتظار اعتمادك', 'Awaiting your approval'))} <span class="count">${pend}</span></h2><button class="btn subtle sm" data-act="nav" data-v="approvals">${esc(L('عرض الكل', 'View all'))}</button></div>${apList(D.approvals.filter((a) => a.status === 'PENDING').slice(0, 4))}</section>
+      <div class="dgrid dg-b">
+        <section class="card"><h2>${esc(f.office ? L('الموظفون حسب القسم', 'Staff by department') : L('الموظفون حسب المكتب', 'Staff by office'))}</h2>${bars(f.office ? a.byDept.slice(0, 7) : byOffice, { title: L('توزيع الموظفين', 'Staff distribution') })}</section>
+        <section class="card"><h2>${esc(L('كلفة الرواتب حسب المنحة', 'Staff cost by grant'))}</h2>${bars(grantBars, { fmt: (v) => k(v), title: L('الكلفة الشهرية حسب المنحة', 'Monthly cost by grant') })}<p class="subtle" style="margin:10px 0 0">${esc(L('شهريا بالدولار، من نسب توزيع الوظائف على المنح.', 'Monthly, in USD, from position-to-grant allocation.'))} ${rule('ORG-004')}</p></section>
+        <section class="card"><h2>${esc(L('تطور عدد الموظفين', 'Headcount trend'))} <span class="count">${esc(period)}</span></h2>${lineChart(a.trend, L('تطور عدد الموظفين', 'Headcount trend'))}</section>
+      </div>
       ${EXT.cdDash.map((fn) => fn()).join('')}`;
   }
 
@@ -1484,7 +1529,8 @@
     badge, rule, avatar, who, tile, msgs, bars, meter, toast, addActivity, emptyState, reqTable, statusBadge, R,
     empById, me, persona, active, balances, validateLeave, serviceDays, serviceMonths, officeName, grant, isWorkDay, workingDays, businessDaysUntil,
     render, save, openOverlay, closeOverlay, setView, drawer, modal, acard, channelPreview, managerDecide, apSubject, roleLabel, flagList,
-    audit, store, addNav, pageHead, table, docModal, getP, setP, openMenu, closeMenu, mItem
+    audit, store, addNav, pageHead, table, docModal, getP, setP, openMenu, closeMenu, mItem,
+    kpiCard, delta, lineChart, donutChart, gaugeChart, hrAnalyticsData, dashFilters
   };
   window.HRMO = HRMO;
   window.__hrmo = { S, D, render, validateLeave, balances, EXT, VIEWS };
