@@ -1053,14 +1053,18 @@
     "nonRetaliationWatchMonths": 12
   },
   "security": {
-    "operationalSuspension": {
-      "maxMonths": 2,
-      "month1PayPercent": 100,
-      "month2UseLeaveFirst": true,
-      "useLeaveType": "ANNUAL",
-      "month2RemainderPayPercent": 0,
-      "informStaffInAdvance": true
-    }
+    "mfaRequired": true,
+    "sessionTimeoutMinutes": 30,
+    "logSensitiveAccess": true,
+    "exportRequiresPurpose": true,
+    "bulkExportApprover": "CD",
+    "bulkExportThresholdRecords": 50,
+    "accessReviewMonths": 3,
+    "disableAccountOnSeparation": true,
+    "adminAccess": "JUST_IN_TIME",
+    "restoreTestMonths": 6,
+    "retentionYearsAfterSeparation": 7,
+    "penetrationTestMonths": 12
   },
   "travel": {
     "approvalChain": [

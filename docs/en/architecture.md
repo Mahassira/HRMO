@@ -45,12 +45,14 @@ Files: [`infra/main.bicep`](../../infra/main.bicep), [`db/schema.sql`](../../db/
 | Someone outside the organisation signs in | Single-tenant Entra ID app; only accounts in the organisation's directory get a token |
 | A user reads another person's record | SQL row-level security: the API sets the caller's employee ID and role on the connection, and the database filters every query. A bug in the API cannot return other rows |
 | A manager sees salaries or medical data | Compensation and private data are in separate tables that the manager role cannot read (rule MG-004) |
-| Rules bypassed from the browser | All 292 rules are evaluated in the API; the browser only displays the result |
+| Rules bypassed from the browser | All 304 rules are evaluated in the API; the browser only displays the result |
 | Stolen password or connection string | There are none: SQL is Entra-only, Storage has shared keys disabled, the API uses a managed identity |
 | Data read from disk or backups | Transparent data encryption on SQL, encryption at rest on Storage, TLS 1.2 minimum in transit |
 | Changes without trace | Temporal tables keep every previous version; the audit table is append-only for the API; SQL auditing goes to Log Analytics |
 | Accidental deletion | SQL point-in-time restore, blob versioning and soft delete, Key Vault purge protection |
 | Data residency | The organisation chooses the Azure region for all data resources |
+
+Full policy, responsibilities and the pre-go-live checklist: [security.md](security.md).
 
 **Out of scope on purpose:** whistleblowing, harassment, fraud and safeguarding reports are not collected. The system links to the organisation's independent channel.
 
