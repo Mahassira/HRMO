@@ -69,6 +69,9 @@ jobs:
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"
 
+      - name: Stamp asset links with this commit
+        run: sed -i "s/__V__/${GITHUB_SHA::8}/g" demo/index.html
+
       - name: Publish front end
         uses: Azure/static-web-apps-deploy@v1
         with:
