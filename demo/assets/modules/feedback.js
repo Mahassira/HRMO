@@ -4,11 +4,11 @@
 (function () {
   'use strict';
   const H = window.HRMO;
-  const { S, EXT, L, esc, icon, fmtD, badge, toast, render, openOverlay, closeOverlay, store, addNav, pageHead, table, modal, emptyState, kpi, TODAY, iso } = H;
+  const { S, D, EXT, L, T, esc, icon, fmtD, badge, toast, render, openOverlay, closeOverlay, store, addNav, pageHead, table, modal, emptyState, kpi, TODAY, iso } = H;
   const CFG = (window.HRMO_CONFIG && window.HRMO_CONFIG.feedback) || {};
   const canSend = () => !!CFG.endpoint;
 
-  const TESTER = store('tester', () => ({ name: '', welcomed: false }));
+  const TESTER = store('tester', () => ({ name: '', welcomed: false, signedOut: false }));
   const ITEMS = store('feedback', () => []);
   try { const q = new URLSearchParams(location.search).get('tester'); if (q && !TESTER.name) TESTER.name = q.slice(0, 60); } catch (e) { /* ignore */ }
 
@@ -23,20 +23,27 @@
   ];
 
   // ---------- Welcome screen ----------
+  // The same screen serves as the first-visit welcome and as the sign-in screen after signing out.
   EXT.overlays.welcome = () => {
-    TESTER.welcomed = true;
-    return `<div class="welcome" role="dialog" aria-modal="true" aria-label="${esc(L('مرحبا بك في HRMO', 'Welcome to HRMO'))}"><div class="welcome-in">
-      <div class="welcome-top"><img src="assets/brand/apple-touch-icon.png" alt="" width="56" height="56"><div class="seg" role="group" aria-label="${esc(L('اللغة', 'Language'))}"><button data-act="wl-lang" data-v="ar" aria-pressed="${S.lang === 'ar'}">العربية</button><button data-act="wl-lang" data-v="en" aria-pressed="${S.lang === 'en'}">English</button></div></div>
-      <h1>${esc(TESTER.name ? L(`مرحبا ${TESTER.name}`, `Welcome, ${TESTER.name}`) : L('مرحبا بك في HRMO', 'Welcome to HRMO'))}</h1>
-      <p class="welcome-lead">${esc(L('نظام لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. هذه نسخة تجريبية ببيانات وهمية، ونريد رأيك فيها قبل استكمال البناء.', 'An HR management system for humanitarian and non-profit organizations. This is a trial version with fictitious data, and we would like your view before building further.'))}</p>
+    const out = TESTER.signedOut; TESTER.welcomed = true;
+    const langs = `<div class="seg" role="group" aria-label="${esc(L('اللغة', 'Language'))}"><button data-act="wl-lang" data-v="ar" aria-pressed="${S.lang === 'ar'}">العربية</button><button data-act="wl-lang" data-v="en" aria-pressed="${S.lang === 'en'}">English</button></div>`;
+    const card = ([r, ic, name, a, b]) => { const p = H.empById.get(D.personas[r]); return `<button class="welcome-role" data-act="wl-start" data-role="${r}"><span class="wr-ic">${icon(ic, 20)}</span><span class="wr-t">${esc(L(...name))}</span>${out ? `<span class="wr-d">${esc(T(p.name.short))}</span><span class="wr-d">${esc(T(p.position))}</span>` : `<span class="wr-d">${esc(L(...a))}</span><span class="wr-d">${esc(L(...b))}</span>`}</button>`; };
+    const title = out ? L('تسجيل الدخول إلى HRMO', 'Sign in to HRMO') : TESTER.name ? L(`مرحبا ${TESTER.name}`, `Welcome, ${TESTER.name}`) : L('مرحبا بك في HRMO', 'Welcome to HRMO');
+    return `<div class="welcome ${out ? 'signin' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="welcome-in">
+      <div class="welcome-top"><img src="assets/brand/apple-touch-icon.png" alt="" width="56" height="56">${langs}</div>
+      <h1>${esc(title)}</h1>
+      ${out ? `<p class="welcome-lead">${esc(L('سجلت خروجك. اختر الحساب الذي تريد الدخول به.', 'You are signed out. Choose the account to sign in with.'))}</p>`
+    : `<p class="welcome-lead">${esc(L('نظام لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. هذه نسخة تجريبية ببيانات وهمية، ونريد رأيك فيها قبل استكمال البناء.', 'An HR management system for humanitarian and non-profit organizations. This is a trial version with fictitious data, and we would like your view before building further.'))}</p>
       <div class="field welcome-name"><label for="wl-name">${esc(L('اسمك (يظهر مع ملاحظاتك)', 'Your name (shown with your feedback)'))}</label><input id="wl-name" class="input" data-wl="name" value="${esc(TESTER.name)}" autocomplete="name" placeholder="${esc(L('اختياري', 'Optional'))}"></div>
-      <h2>${esc(L('اختر واجهة للبدء', 'Choose a workspace to start'))}</h2>
-      <div class="welcome-roles">${ROLE_CARDS.map(([r, ic, name, a, b]) => `<button class="welcome-role" data-act="wl-start" data-role="${r}"><span class="wr-ic">${icon(ic, 20)}</span><span class="wr-t">${esc(L(...name))}</span><span class="wr-d">${esc(L(...a))}</span><span class="wr-d">${esc(L(...b))}</span></button>`).join('')}</div>
-      <div class="welcome-note">${icon('chat', 18)}<div><b>${esc(L('رأيك هو الهدف', 'Your view is the goal'))}</b><br>${esc(L('في أي شاشة اضغط زر "ملاحظة" واكتب ما تراه: قاعدة غير دقيقة، وظيفة ناقصة، أو شيء صعب الاستخدام. تسجل الشاشة التي كنت فيها تلقائيا.', 'On any screen press "Feedback" and write what you see: an inaccurate rule, a missing feature, or something hard to use. The screen you were on is recorded automatically.'))}</div></div>
-      <p class="welcome-foot">${esc(L('يمكنك التنقل بين الواجهات الأربع في أي وقت من أعلى الصفحة. كل ما تدخله يحفظ في متصفحك فقط.', 'You can switch between the four workspaces at any time from the top of the page. Everything you enter stays in your browser.'))}</p>
+      <h2>${esc(L('اختر واجهة للبدء', 'Choose a workspace to start'))}</h2>`}
+      <div class="welcome-roles">${ROLE_CARDS.map(card).join('')}</div>
+      ${out ? '' : `<div class="welcome-note">${icon('chat', 18)}<div><b>${esc(L('رأيك هو الهدف', 'Your view is the goal'))}</b><br>${esc(L('في أي شاشة اضغط زر "ملاحظة" واكتب ما تراه: قاعدة غير دقيقة، وظيفة ناقصة، أو شيء صعب الاستخدام. تسجل الشاشة التي كنت فيها تلقائيا.', 'On any screen press "Feedback" and write what you see: an inaccurate rule, a missing feature, or something hard to use. The screen you were on is recorded automatically.'))}</div></div>`}
+      <p class="welcome-foot">${esc(out ? L('في النسخة الفعلية يدخل كل شخص بحساب العمل ويرى واجهته فقط. هنا تختار الحساب لأن البيانات تجريبية.', 'In production each person signs in with their work account and sees only their own workspace. Here you choose the account because the data is fictitious.') : L('للانتقال إلى واجهة أخرى سجل الخروج من الأيقونة أعلى الصفحة ثم اختر حسابا آخر. كل ما تدخله يحفظ في متصفحك فقط.', 'To move to another workspace, sign out with the icon at the top of the page and choose another account. Everything you enter stays in your browser.'))}</p>
     </div></div>`;
   };
-  if (!TESTER.welcomed) S.overlay = { type: 'welcome' };
+  if (!TESTER.welcomed || TESTER.signedOut) S.overlay = { type: 'welcome' };
+  // While signed out the sign-in screen cannot be dismissed.
+  EXT.afterRender.push(() => { if (TESTER.signedOut && (!S.overlay || S.overlay.type !== 'welcome')) { S.overlay = { type: 'welcome' }; render(); } });
 
   // ---------- Feedback form ----------
   const blank = () => ({ type: 'POLICY', priority: 'SHOULD', rating: 0, text: '', area: '' });
@@ -93,7 +100,8 @@
   Object.assign(EXT.actions, {
     'wl-open': () => openOverlay({ type: 'welcome' }),
     'wl-lang': (t) => { S.lang = t.dataset.v; render(); },
-    'wl-start': (t) => { S.role = t.dataset.role; S.overlay = null; render(); toast(L('اضغط "ملاحظة" في أي وقت لتسجيل رأيك.', 'Press "Feedback" at any time to record your view.')); },
+    signout: () => { TESTER.signedOut = true; S.navOpen = false; S.overlay = { type: 'welcome' }; const th = document.getElementById('toast-host'); if (th) th.innerHTML = ''; const tp = document.getElementById('tooltip'); if (tp) tp.hidden = true; render(); },
+    'wl-start': (t) => { const was = TESTER.signedOut; TESTER.signedOut = false; S.role = t.dataset.role; S.overlay = null; render(); if (was) { toast(L(`مرحبا ${T(H.persona().name.short)}`, `Welcome, ${T(H.persona().name.short)}`)); return; } toast(L('اضغط "ملاحظة" في أي وقت لتسجيل رأيك.', 'Press "Feedback" at any time to record your view.')); },
     'fb-open': () => { S.fb = Object.assign(blank(), { area: here() }); openOverlay({ type: 'feedback' }); },
     'fb-rate': (t) => { const n = +t.dataset.v; S.fb.rating = S.fb.rating === n ? 0 : n; render(); },
     'fb-submit': async () => {

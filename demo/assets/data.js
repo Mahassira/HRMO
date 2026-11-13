@@ -311,6 +311,9 @@
   const separations = [];
   for (let k = 0; k < 58; k++) separations.push({ date: iso(addDays(today, -int(5, 360))), type: weighted([['RESIGNATION', 5], ['CONTRACT_END', 6], ['REDUNDANCY', 2], ['DISCIPLINARY', 0.4]]), dept: weighted(deptPairs)[0] });
 
+  // E-mail follows the final name (the demo personas are renamed after generation).
+  employees.forEach((e, i) => { const w = e.name.en.split(' '); e.email = `${w[0].toLowerCase()}.${w[w.length - 1].toLowerCase().replace(/[^a-z]/g, '')}${i}@example.org`; });
+
   // Office of each separation, spread by office size without touching the random sequence.
   { const spread = ['MO', 'MO', 'MO', 'NF', 'NF', 'SF', 'SF', 'CF', 'CF', 'EF']; separations.forEach((s, k) => { s.office = spread[(k * 7) % 10]; }); }
 

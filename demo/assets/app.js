@@ -147,6 +147,7 @@
     approve: 'M4 4h12v12H4zM7 10l2 2 4-4',
     apps: 'M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM11 11h5v5h-5z',
     reset: 'M4 10a6 6 0 1 0 2-4.5M4 4v3.5h3.5',
+    logout: 'M8 3.5H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h3M12.5 6.5 16 10l-3.5 3.5M16 10H8',
     doc: 'M6 3h6l3 3v11H6zM12 3v3h3M8 10h5M8 13h5',
     up: 'M10 15V5M6 9l4-4 4 4',
     down: 'M4 7l6 6 6-6',
@@ -361,17 +362,20 @@
     const side = NAV[S.role].map((gr) => `<div class="nav-group"><div class="nav-group-label">${esc(L(gr.ar, gr.en))}</div>${gr.items.map(navItem).join('')}</div>`).join('');
     return `
     <header class="topbar">
-      <button class="iconbtn only-sm" data-act="nav-toggle" aria-label="${esc(L('القائمة', 'Menu'))}" aria-expanded="${S.navOpen}">${icon('menu')}</button>
-      <button class="iconbtn hide-md" data-act="collapse" aria-label="${esc(L('طي القائمة الجانبية', 'Collapse sidebar'))}" data-tip="${esc(esc(S.collapsed ? L('توسيع القائمة', 'Expand menu') : L('طي القائمة', 'Collapse menu')))}">${icon('panel')}</button>
-      <div class="brand"><img class="logo" src="assets/brand/apple-touch-icon.png" alt="" width="32" height="32"><span>HRMO</span></div>
-      <button class="ws-switch" data-act="menu-ws" aria-haspopup="menu" title="${esc(L('تبديل مساحة العمل', 'Switch workspace'))}">${icon(S.role === 'CD' ? 'chart' : S.role === 'HR' ? 'people' : 'person', 14)}<span class="wl">${esc(roleLabel(S.role))}</span>${icon('down', 12)}</button>
-      <span class="demo-pill">${esc(L('بيانات تجريبية', 'Demo data'))}</span>${EXT.topbar.map((fn) => fn()).join('')}
-      <label class="search">${icon('search', 16)}<span class="sr-only">${esc(L('بحث', 'Search'))}</span><input type="search" id="gsearch" placeholder="${esc(L('ابحث عن موظف أو رقم وظيفي…', 'Search employees or staff numbers…'))}" data-act="global-search"><kbd>/</kbd></label>
+      <div class="tb-start">
+        <button class="iconbtn only-sm" data-act="nav-toggle" aria-label="${esc(L('القائمة', 'Menu'))}" aria-expanded="${S.navOpen}">${icon('menu')}</button>
+        <button class="iconbtn hide-md" data-act="collapse" aria-label="${esc(L('طي القائمة الجانبية', 'Collapse sidebar'))}" data-tip="${esc(esc(S.collapsed ? L('توسيع القائمة', 'Expand menu') : L('طي القائمة', 'Collapse menu')))}">${icon('panel')}</button>
+        <label class="search">${icon('search', 16)}<span class="sr-only">${esc(L('بحث', 'Search'))}</span><input type="search" id="gsearch" placeholder="${esc(L('ابحث عن موظف أو رقم وظيفي…', 'Search employees or staff numbers…'))}" data-act="global-search"><kbd>/</kbd></label>
+      </div>
+      <div class="brand"><img class="logo" src="assets/brand/apple-touch-icon.png" alt="" width="32" height="32"><span>HRMO</span><span class="demo-pill">${esc(L('تجريبي', 'Demo'))}</span></div>
       <div class="tools">
+        ${EXT.topbar.map((fn) => fn()).join('')}
         <button class="iconbtn" data-act="activity" aria-label="${esc(L('الإشعارات', 'Notifications'))}" data-tip="${esc(esc(L('الإشعارات', 'Notifications')))}">${icon('bell')}${n ? `<span class="count">${n}</span>` : ''}</button>
         <button class="iconbtn hide-sm" data-act="help" aria-label="${esc(L('المساعدة', 'Help'))}" data-tip="${esc(esc(L('المساعدة', 'Help')))}">${icon('help')}</button>
         <button class="iconbtn hide-sm" data-act="prefs" aria-label="${esc(L('الإعدادات', 'Settings'))}" data-tip="${esc(esc(L('التفضيلات', 'Preferences')))}">${icon('gear')}</button>
-        <button class="userbtn" data-act="menu-user" aria-haspopup="menu" aria-label="${esc(T(p.name))}">${avatar(p)}<span class="ut hide-sm"><span class="un" style="display:block">${esc(T(p.name.short))}</span><span class="ur">${esc(T(p.position))}</span></span>${icon('down', 12)}</button>
+        <button class="userbtn" data-act="menu-user" aria-haspopup="menu" aria-label="${esc(T(p.name))}">${avatar(p)}<span class="ut"><span class="un" style="display:block">${esc(T(p.name.short))}</span><span class="ur">${esc(T(p.position))}</span></span><span class="uchev">${icon('down', 12)}</span></button>
+        <span class="tb-sep" aria-hidden="true"></span>
+        <button class="iconbtn signout" data-act="signout" aria-label="${esc(L('تسجيل الخروج', 'Sign out'))}" data-tip="${esc(esc(L('تسجيل الخروج', 'Sign out')))}">${icon('logout')}</button>
       </div>
     </header>
     <div class="shell ${S.collapsed ? 'collapsed' : ''} ${S.navOpen ? 'nav-open' : ''}">
@@ -405,8 +409,8 @@
     const p = persona();
     return `<div class="menu-head">${avatar(p)}<div style="min-width:0"><div class="n">${esc(T(p.name))}</div><div class="subtle" style="direction:ltr;text-align:start;overflow:hidden;text-overflow:ellipsis">${esc(p.email)}</div></div></div><div class="menu-sep"></div>
       ${mItem('my-profile', 'person', L('ملفي الشخصي', 'My profile'))}${mItem('prefs', 'gear', L('التفضيلات', 'Preferences'))}${mItem('help', 'help', L('المساعدة', 'Help'))}
-      <div class="menu-sep"></div><div class="menu-label">${esc(L('تبديل مساحة العمل', 'Switch workspace'))}</div>${ROLES.map(([r, ar, en]) => mItem('role', '', L(ar, en), `data-v="${r}"`, '', S.role === r)).join('')}
-      <div class="menu-sep"></div>${mItem('reset', 'reset', L('إعادة ضبط البيانات التجريبية', 'Reset demo data'), '', '', false, 'danger')}`;
+      <div class="menu-sep"></div>${mItem('reset', 'reset', L('إعادة ضبط البيانات التجريبية', 'Reset demo data'), '', '', false, 'danger')}
+      <div class="menu-sep"></div>${mItem('signout', 'logout', L('تسجيل الخروج', 'Sign out'))}`;
   }
   function rowMenu(id) {
     const e = empById.get(id);
