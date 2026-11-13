@@ -1525,6 +1525,29 @@
   }
   EXT.actions['doc-print'] = printDoc;
 
+  // ---------- Tables as cards on phones ----------
+  // Copies each column name into its cells, so the phone layout (styles.css, section 20) can show
+  // "label: value" lines instead of a wide table. Runs whenever the page content changes.
+  function labelTables() {
+    document.querySelectorAll('#app table:not(.sr-only):not(.tcal)').forEach((t) => {
+      const heads = [...t.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+      if (!heads.length) return;
+      t.classList.add('rt');
+      t.querySelectorAll('tbody > tr').forEach((tr) => {
+        if (tr.dataset.rt) return; tr.dataset.rt = '1'; let lead = false;
+        [...tr.children].forEach((td, i) => {
+          if (td.colSpan > 1) { td.classList.add('rt-full'); return; }
+          if (td.classList.contains('cb')) return;
+          if (!lead) { lead = true; td.classList.add('rt-lead'); return; }
+          const txt = td.textContent.trim(); if ((!txt || txt === '—' || txt === '-') && !td.querySelector('button, input, select, img')) { td.classList.add('rt-empty'); return; }
+          if (td.classList.contains('actions')) return;
+          if (heads[i]) td.dataset.label = heads[i];
+        });
+      });
+    });
+  }
+  new MutationObserver(() => labelTables()).observe(document.getElementById('app'), { childList: true, subtree: true });
+
   load();
   EXT.state.audit = EXT.saved.audit || [];
   const HRMO = {
