@@ -5,7 +5,9 @@
 (function () {
   'use strict';
   const D = window.HRDATA;
-  const STORE_KEY = 'hrmo-demo-v2';
+  const STORE_KEY = 'hrmo-demo-v3';
+  // Bump when the sample dataset changes: saved state that points at employees of an older dataset is discarded.
+  const DATA_VERSION = 'shipping-1';
   const DEFAULT_SETS = JSON.parse(JSON.stringify(D.POLICY_SETS));
   const DEFAULT_POLICY = DEFAULT_SETS.EG;
 
@@ -35,7 +37,7 @@
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        role: S.role, lang: S.lang, theme: S.theme, view: S.view, collapsed: S.collapsed,
+        dataVersion: DATA_VERSION, role: S.role, lang: S.lang, theme: S.theme, view: S.view, collapsed: S.collapsed,
         leaveRequests: D.leaveRequests, approvals: D.approvals, candidates: D.candidates, activity: D.activity,
         policySets: D.POLICY_SETS, timesheet: S.timesheet, readActivity: S.readActivity, ext: EXT.state,
         me: { ackMissing: me().ackMissing, leave: me().leave }
@@ -49,6 +51,9 @@
       try { if (matchMedia('(prefers-color-scheme: dark)').matches) S.theme = 'dark'; } catch (e) { /* ignore */ }
       return;
     }
+    const ids = new Set(D.employees.map((e) => e.id));
+    const stale = saved.dataVersion !== DATA_VERSION || (saved.leaveRequests || []).some((r) => !ids.has(r.empId)) || (saved.approvals || []).some((a) => (a.subject && !ids.has(a.subject)) || !ids.has(a.requester));
+    if (stale) { saved = { lang: saved.lang, theme: saved.theme }; }
     Object.assign(S, { role: saved.role || S.role, lang: saved.lang || S.lang, theme: saved.theme || S.theme, view: Object.assign(S.view, saved.view || {}), collapsed: !!saved.collapsed });
     if (saved.leaveRequests) D.leaveRequests = saved.leaveRequests;
     if (saved.approvals) D.approvals = saved.approvals;
@@ -72,7 +77,10 @@
   const T = (o) => (o == null ? '' : typeof o === 'string' ? o : (S.lang === 'ar' ? o.ar : o.en));
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const locale = () => (S.lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB');
-  const fmtN = (n, d = 0) => new Intl.NumberFormat(locale(), { maximumFractionDigits: d, minimumFractionDigits: d }).format(n);
+  // Intl formatters are expensive to build; cache one per locale and option set.
+  const fmtCache = {};
+  const fmt = (kind, opts) => { const k = kind + locale() + JSON.stringify(opts); return fmtCache[k] || (fmtCache[k] = new Intl[kind](locale(), opts)); };
+  const fmtN = (n, d = 0) => fmt('NumberFormat', { maximumFractionDigits: d, minimumFractionDigits: d }).format(n);
   const CUR = { EGP: { ar: 'جنيه', en: 'EGP' }, AED: { ar: 'درهم', en: 'AED' } };
   const curLabel = (c = D.BASE_CUR) => (CUR[c] ? (S.lang === 'ar' ? CUR[c].ar : CUR[c].en) : c);
   const money = (n, c = D.BASE_CUR) => `${fmtN(Math.round(n))} ${curLabel(c)}`;
@@ -83,8 +91,8 @@
   const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const TODAY = parse(D.todayISO);
-  const fmtD = (s) => (s ? new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short', year: 'numeric' }).format(parse(s)) : '—');
-  const fmtDs = (s) => new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(parse(s));
+  const fmtD = (s) => (s ? fmt('DateTimeFormat', { day: 'numeric', month: 'short', year: 'numeric' }).format(parse(s)) : '—');
+  const fmtDs = (s) => fmt('DateTimeFormat', { day: 'numeric', month: 'short' }).format(parse(s));
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
   const initials = (name) => { const p = T(name.short || name).split(' '); return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase(); };
