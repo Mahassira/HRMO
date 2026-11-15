@@ -4,39 +4,40 @@
 
 **English** · [العربية](#العربية)
 
-HRMO is a configurable human resources management system for humanitarian and non-profit organizations. It is built on Microsoft Azure and runs entirely within the Microsoft ecosystem: staff sign in with their work account and use it from the browser, Microsoft Teams and Outlook.
+HRMO is a configurable human resources management system for companies that work across several branches and countries. This edition is configured for a shipping and logistics company with a head office in Cairo and four branches that report directly to it: Damietta, Ain Sokhna, Safaga and Dubai. It is built on Microsoft Azure and runs entirely within the Microsoft ecosystem: staff sign in with their work account and use it from the browser, Microsoft Teams and Outlook.
 
-![HRMO — Country Director](docs/images/en-country-director.png)
+![HRMO — General Manager](docs/images/en-general-manager.png)
 
 ## Why HRMO
 
-Humanitarian organizations manage staff across field offices, grants and hardship locations, under donor rules and local labor law. HRMO puts the whole employee lifecycle in one place and applies the organization's own policies automatically, so that every request is checked the same way and every decision is recorded.
+A shipping company manages office staff, customs brokers, port crews, drivers and warehouse teams across ports and countries, each under its own labour law, working week and currency. HRMO puts the whole employee lifecycle in one place and applies the company's own policies automatically, so that every request is checked the same way and every decision is recorded.
 
-- **Policy-driven.** Leave entitlements, notice periods, approval levels, probation, overtime and every other rule are settings, not code. Each organization, and each country office, has its own policy set.
-- **Built for the field.** Grants and funding lines, hardship duty stations, rest and recuperation, staff safety check-ins and emergency surge rosters are part of the system.
-- **Inside Microsoft.** Sign-in, approvals in Teams and Outlook, documents and data all stay within the organization's Microsoft environment.
+- **Policy-driven.** Leave entitlements, notice periods, approval levels, probation, overtime and every other rule are settings, not code. Each country of operation has its own policy set and currency: Egypt in Egyptian pounds, the UAE in dirhams.
+- **Built for ports and branches.** Cost centres and client contracts, site allowances, rotation rest at remote ports, safety check-ins after an incident, operating licences and a branch support pool are part of the system.
+- **One structure.** Every branch manager reports to the General Manager at the head office, and the organization chart is drawn from each employee's line manager.
+- **Inside Microsoft.** Sign-in, approvals in Teams and Outlook, documents and data all stay within the company's Microsoft environment.
 - **Arabic and English.** Full right-to-left support, on desktop and phone.
 
 ## Who uses it
 
 | Workspace | What it covers |
 |---|---|
-| **Employee** | Leave requests with instant policy checks, timesheets with grant allocation, overtime, payslips, letters and certificates, performance and objectives, learning, travel, equipment, declarations, HR helpdesk, wellbeing and confidential support |
+| **Employee** | Leave requests with instant policy checks, timesheets with cost-centre allocation, overtime, payslips, letters and certificates, performance and objectives, learning, travel, equipment, declarations, HR helpdesk, wellbeing and confidential support |
 | **Line manager** | Team overview, one inbox for all approvals, team leave calendar, performance reviews and improvement plans, organization chart |
 | **HR** | Employee directory, recruitment, onboarding, changes of status, separations and final settlement, positions and budget, leave and attendance, performance cycle, learning, staff safety, wellbeing, professional licences, cases and grievances, travel, assets, audit log and policy settings |
-| **Country Director** | Executive dashboard, approvals, workforce cost by grant, funding risk, liabilities, diversity and localization, staff safety |
+| **General Manager** | Executive dashboard, approvals, workforce cost by cost centre in one currency, client contracts ending soon, liabilities, diversity and localization, staff safety |
 
 ## Modules
 
 **Employee lifecycle**
-- Recruitment with mandatory steps: funded position, panel evaluation, reference checks, compliance and misconduct screening
+- Recruitment with mandatory steps: budgeted position, panel evaluation, reference checks, criminal record and port security pass
 - Onboarding checklists, probation follow-up and contract renewals
-- Changes of status: promotion, transfer, salary and funding changes, with approval
+- Changes of status: promotion, transfer, salary and cost-centre changes, with approval
 - Separation: resignation, clearance by department, final settlement and exit evaluation
 
 **Time and pay**
 - Leave of all types, with balances, carry-over and holiday calendars
-- Daily attendance, monthly timesheets split by grant, overtime
+- Daily attendance, monthly timesheets split by cost centre, overtime
 - Payslips and validated payroll inputs for the finance system
 
 **Performance and learning**
@@ -44,10 +45,10 @@ Humanitarian organizations manage staff across field offices, grants and hardshi
 - Training catalogue, mandatory courses and training needs
 
 **Duty of care**
-- Safety check-ins after an incident, with live headcount by office
-- Rest and recuperation, burnout watch and hardship allowance
-- Confidential psychosocial support requests
-- Professional licence tracking for medical and technical staff
+- Safety check-ins after an incident, with live headcount by branch
+- Rotation rest at remote ports, burnout watch and site allowance
+- Confidential employee support requests
+- Licence tracking: customs broker, heavy vehicle, crane and forklift, dangerous goods, port security
 
 **Employee relations**
 - Disciplinary cases with a warning ladder and expiry dates
@@ -55,11 +56,11 @@ Humanitarian organizations manage staff across field offices, grants and hardshi
 - Conflict of interest and gift declarations
 - HR helpdesk with response targets
 
-**Organization**
-- Positions and budget against grants
+**Company**
+- Positions and budget against cost centres
 - Organization chart, travel and security clearance, assets
-- Emergency surge roster
-- HR indicators and reports for management and donors
+- Branch support pool for vessel peaks
+- HR indicators and reports for management
 
 ## Approvals in Teams and Outlook
 
@@ -69,11 +70,23 @@ Every request reaches its approver as a card in Teams and Outlook. The card show
 
 ## Security and privacy
 
-- Data stays in the organization's own Azure subscription, in the region it chooses.
-- Sign-in uses Microsoft Entra ID, so the organization's own security rules apply.
+- Data stays in the company's own Azure subscription, in the region it chooses.
+- Sign-in uses Microsoft Entra ID, so the company's own security rules apply.
 - Each person sees only what their role allows: employees see their own record, managers see their team, and salary and private data are restricted to HR and management.
 - Every change keeps its history, and the audit log cannot be edited.
-- Reports of harassment, fraud and safeguarding are not collected in the system. Staff are directed to the organization's independent reporting channel.
+- Reports of harassment, fraud and bribery are not collected in the system. Staff are directed to the company's independent reporting channel.
+
+## Company structure
+
+| Location | Role | Country | Policy set | Currency |
+|---|---|---|---|---|
+| Cairo | Head office | Egypt | Egypt | EGP |
+| Damietta | Branch, reports to Cairo | Egypt | Egypt | EGP |
+| Ain Sokhna | Branch, reports to Cairo | Egypt | Egypt | EGP |
+| Safaga | Branch, reports to Cairo | Egypt | Egypt | EGP |
+| Dubai | Branch, reports to Cairo | UAE | UAE | AED |
+
+About 150 staff in ten departments: freight operations, customs clearance, port operations, inland transport, warehousing, sales and customer service, finance, human resources, HSE and security, administration and IT. The Dubai branch follows UAE labour law, its own working week and the dirham; group figures are shown in Egyptian pounds. Details are in the [company profile](docs/en/company-profile.md).
 
 ## Built with
 
@@ -107,9 +120,11 @@ Every request reaches its approver as a card in Teams and Outlook. The card show
 | Security and confidentiality policy | [security.md](docs/en/security.md) | [security.md](docs/ar/security.md) |
 | Deployment guide | [azure-setup.md](docs/en/azure-setup.md) | [azure-setup.md](docs/ar/azure-setup.md) |
 | Data pipeline, warehouse and data quality | [data-pipeline.md](docs/en/data-pipeline.md) | [data-pipeline.md](docs/ar/data-pipeline.md) |
-| Default policy set | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
+| Company profile and country policy sets | [company-profile.md](docs/en/company-profile.md) | [company-profile.md](docs/ar/company-profile.md) |
+| Policy sets for Egypt and the UAE | [policy-sets-shipping.json](data/config-defaults/policy-sets-shipping.json) | |
+| Full parameter template | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
 
-Default policy values are examples. Each organization reviews them against its own policies and local labor law.
+Policy values are starting defaults taken from the labour law of each country. They must be reviewed by legal counsel before use. The technical reference documents use the general terms of the platform: a grant there is a cost centre here, and the Country Director role is the General Manager.
 
 ---
 
@@ -117,37 +132,38 @@ Default policy values are examples. Each organization reviews them against its o
 
 ## العربية
 
-HRMO نظام قابل للتهيئة لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. مبني على Microsoft Azure ويعمل داخل نظام مايكروسوفت بالكامل: يدخل الموظف بحساب العمل ويستخدم النظام من المتصفح ومن Microsoft Teams وOutlook.
+HRMO نظام قابل للتهيئة لإدارة الموارد البشرية في الشركات التي تعمل عبر عدة فروع ودول. هذه النسخة مهيأة لشركة شحن وخدمات لوجستية مقرها الرئيسي في القاهرة ولها أربعة فروع ترتبط به مباشرة: دمياط والسخنة وسفاجا ودبي. مبني على Microsoft Azure ويعمل داخل نظام مايكروسوفت بالكامل: يدخل الموظف بحساب العمل ويستخدم النظام من المتصفح ومن Microsoft Teams وOutlook.
 
 ### لماذا HRMO
 
-المؤسسات الإنسانية تدير موظفين موزعين على مكاتب ميدانية ومنح ومواقع عمل شاقة، وتلتزم بشروط المانحين وقانون العمل المحلي. يجمع HRMO دورة حياة الموظف كلها في مكان واحد ويطبق سياسات المؤسسة تلقائيا، فيفحص كل طلب بالطريقة نفسها ويوثق كل قرار.
+شركة الشحن تدير موظفي مكاتب ومخلصين جمركيين وأطقم موانئ وسائقين وفرق مستودعات في موانئ ودول مختلفة، ولكل دولة قانون عملها وأسبوع عملها وعملتها. يجمع HRMO دورة حياة الموظف كلها في مكان واحد ويطبق سياسات الشركة تلقائيا، فيفحص كل طلب بالطريقة نفسها ويوثق كل قرار.
 
-- **يعمل بالسياسات.** استحقاقات الإجازات ومدد الإشعار ومستويات الموافقة وفترة التجربة والعمل الإضافي وكل قاعدة أخرى هي إعدادات وليست برمجة. لكل مؤسسة ولكل مكتب قطري مجموعة سياسات خاصة.
-- **مصمم للعمل الميداني.** المنح وخطوط التمويل ومراكز العمل الشاقة والراحة والتعافي واستطلاعات سلامة الموظفين وقوائم الانتشار السريع جزء من النظام.
-- **داخل مايكروسوفت.** تسجيل الدخول والموافقات في Teams وOutlook والمستندات والبيانات تبقى كلها داخل بيئة مايكروسوفت الخاصة بالمؤسسة.
+- **يعمل بالسياسات.** استحقاقات الإجازات ومدد الإشعار ومستويات الموافقة وفترة التجربة والعمل الإضافي وكل قاعدة أخرى هي إعدادات وليست برمجة. لكل دولة تعمل فيها الشركة مجموعة سياسات وعملة: مصر بالجنيه المصري والإمارات بالدرهم.
+- **مصمم للموانئ والفروع.** مراكز التكلفة وعقود العملاء وبدل طبيعة الموقع وراحة التناوب في الموانئ البعيدة واستطلاعات السلامة بعد الحوادث وتراخيص التشغيل وفريق دعم الفروع جزء من النظام.
+- **هيكل واحد.** كل مدير فرع يتبع المدير العام في المقر الرئيسي، ويرسم الهيكل التنظيمي تلقائيا من المدير المباشر لكل موظف.
+- **داخل مايكروسوفت.** تسجيل الدخول والموافقات في Teams وOutlook والمستندات والبيانات تبقى كلها داخل بيئة مايكروسوفت الخاصة بالشركة.
 - **بالعربية والإنجليزية.** دعم كامل للكتابة من اليمين إلى اليسار على الحاسوب والهاتف.
 
 ### من يستخدمه
 
 | الواجهة | ما تغطيه |
 |---|---|
-| **الموظف** | طلبات الإجازة مع فحص فوري للسياسات، كشوف الدوام مع توزيع المنح، العمل الإضافي، قسائم الراتب، الخطابات والشهادات، الأداء والأهداف، التعلم، السفر، العهد، الإقرارات، مكتب مساعدة الموارد البشرية، الرفاه والدعم السري |
+| **الموظف** | طلبات الإجازة مع فحص فوري للسياسات، كشوف الدوام مع توزيع مراكز التكلفة، العمل الإضافي، قسائم الراتب، الخطابات والشهادات، الأداء والأهداف، التعلم، السفر، العهد، الإقرارات، مكتب مساعدة الموارد البشرية، الرفاه والدعم السري |
 | **المدير المباشر** | نظرة على الفريق، صندوق واحد لكل الموافقات، تقويم إجازات الفريق، تقييمات الأداء وخطط التحسين، الهيكل التنظيمي |
 | **الموارد البشرية** | سجل الموظفين، التوظيف، الاستقبال، تغيير الحالة الوظيفية، إنهاء الخدمة والتسوية النهائية، الوظائف والميزانية، الإجازات والحضور، دورة الأداء، التعلم، سلامة الموظفين، الرفاه، التراخيص المهنية، القضايا والتظلمات، السفر، العهد، سجل التدقيق وإعدادات السياسات |
-| **المدير القطري** | لوحة تنفيذية، الموافقات، كلفة القوى العاملة حسب المنحة، مخاطر التمويل، الالتزامات، التنوع والتوطين، سلامة الموظفين |
+| **المدير العام** | لوحة تنفيذية، الموافقات، كلفة القوى العاملة حسب مركز التكلفة بعملة واحدة، عقود العملاء التي تنتهي قريبا، الالتزامات، التنوع والتوطين، سلامة الموظفين |
 
 ### الوحدات
 
 **دورة حياة الموظف**
-- التوظيف بخطوات إلزامية: وظيفة ممولة، تقييم اللجنة، التحقق من المراجع، فحص الامتثال وسوء السلوك
+- التوظيف بخطوات إلزامية: وظيفة معتمدة في الموازنة، تقييم اللجنة، التحقق من المراجع، صحيفة الحالة الجنائية وتصريح دخول الميناء
 - قوائم الاستقبال ومتابعة فترة التجربة وتجديد العقود
-- تغيير الحالة الوظيفية: الترقية والنقل وتعديل الراتب والتمويل، بموافقة
+- تغيير الحالة الوظيفية: الترقية والنقل وتعديل الراتب ومركز التكلفة، بموافقة
 - إنهاء الخدمة: الاستقالة، المخالصة حسب القسم، التسوية النهائية وتقييم الخروج
 
 **الوقت والرواتب**
 - الإجازات بكل أنواعها، مع الأرصدة والترحيل وتقويم العطل
-- الحضور اليومي، كشوف الدوام الشهرية موزعة على المنح، العمل الإضافي
+- الحضور اليومي، كشوف الدوام الشهرية موزعة على مراكز التكلفة، العمل الإضافي
 - قسائم الراتب ومدخلات رواتب مدققة للنظام المالي
 
 **الأداء والتعلم**
@@ -155,10 +171,10 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 - دليل الدورات، الدورات الإلزامية والاحتياجات التدريبية
 
 **واجب الرعاية**
-- استطلاعات السلامة بعد الحوادث، مع عد حي حسب المكتب
-- الراحة والتعافي، رصد الإنهاك وبدل المشقة
-- طلبات الدعم النفسي الاجتماعي السرية
-- متابعة التراخيص المهنية للكوادر الطبية والفنية
+- استطلاعات السلامة بعد الحوادث، مع عد حي حسب الفرع
+- راحة التناوب في الموانئ البعيدة، رصد الإنهاك وبدل طبيعة الموقع
+- طلبات الدعم النفسي السرية
+- متابعة التراخيص: المخلص الجمركي، قيادة النقل الثقيل، الأوناش والرافعات الشوكية، البضائع الخطرة، أمن الموانئ
 
 **علاقات العمل**
 - القضايا التأديبية مع سلم الإنذارات وتواريخ انتهائها
@@ -166,11 +182,11 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 - إقرارات تضارب المصالح والهدايا
 - مكتب مساعدة الموارد البشرية بمهل رد محددة
 
-**المؤسسة**
-- الوظائف والميزانية مقابل المنح
+**الشركة**
+- الوظائف والميزانية مقابل مراكز التكلفة
 - الهيكل التنظيمي، السفر والتصريح الأمني، العهد
-- قائمة الانتشار السريع للطوارئ
-- مؤشرات وتقارير الموارد البشرية للإدارة والمانحين
+- فريق دعم الفروع عند ضغط السفن
+- مؤشرات وتقارير الموارد البشرية للإدارة
 
 ### الموافقات في Teams وOutlook
 
@@ -178,11 +194,23 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 
 ### الأمان والخصوصية
 
-- البيانات تبقى في اشتراك Azure الخاص بالمؤسسة وفي المنطقة التي تختارها.
-- الدخول عبر Microsoft Entra ID، فتسري قواعد الأمان الخاصة بالمؤسسة.
+- البيانات تبقى في اشتراك Azure الخاص بالشركة وفي المنطقة التي تختارها.
+- الدخول عبر Microsoft Entra ID، فتسري قواعد الأمان الخاصة بالشركة.
 - كل شخص يرى ما يسمح به دوره فقط: الموظف يرى سجله، والمدير يرى فريقه، وبيانات الرواتب والبيانات الخاصة محصورة في الموارد البشرية والإدارة.
 - كل تغيير يحتفظ بتاريخه، وسجل التدقيق لا يقبل التعديل.
-- لا يستقبل النظام بلاغات التحرش والاحتيال والحماية، ويوجه الموظف إلى قناة الإبلاغ المستقلة في المؤسسة.
+- لا يستقبل النظام بلاغات التحرش والاحتيال والرشوة، ويوجه الموظف إلى قناة الإبلاغ المستقلة في الشركة.
+
+### هيكل الشركة
+
+| المقر | الدور | الدولة | مجموعة السياسات | العملة |
+|---|---|---|---|---|
+| القاهرة | المقر الرئيسي | مصر | مصر | جنيه مصري |
+| دمياط | فرع يتبع القاهرة | مصر | مصر | جنيه مصري |
+| السخنة | فرع يتبع القاهرة | مصر | مصر | جنيه مصري |
+| سفاجا | فرع يتبع القاهرة | مصر | مصر | جنيه مصري |
+| دبي | فرع يتبع القاهرة | الإمارات | الإمارات | درهم إماراتي |
+
+نحو 150 موظفا في عشرة أقسام: عمليات الشحن، التخليص الجمركي، عمليات الموانئ، النقل البري، المستودعات، المبيعات وخدمة العملاء، المالية، الموارد البشرية، السلامة والأمن، الإدارة وتقنية المعلومات. فرع دبي يتبع قانون العمل الإماراتي وأسبوع عمله والدرهم، وتعرض أرقام المجموعة بالجنيه المصري. التفاصيل في [ملف الشركة](docs/ar/company-profile.md).
 
 ### التقنيات المستخدمة
 
@@ -209,9 +237,11 @@ HRMO نظام قابل للتهيئة لإدارة الموارد البشرية
 | سياسة الأمن والسرية | [security.md](docs/ar/security.md) | [security.md](docs/en/security.md) |
 | دليل النشر | [azure-setup.md](docs/ar/azure-setup.md) | [azure-setup.md](docs/en/azure-setup.md) |
 | مسار البيانات والمستودع وجودة البيانات | [data-pipeline.md](docs/ar/data-pipeline.md) | [data-pipeline.md](docs/en/data-pipeline.md) |
-| مجموعة السياسات الافتراضية | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
+| ملف الشركة ومجموعات السياسات حسب الدولة | [company-profile.md](docs/ar/company-profile.md) | [company-profile.md](docs/en/company-profile.md) |
+| مجموعتا سياسات مصر والإمارات | [policy-sets-shipping.json](data/config-defaults/policy-sets-shipping.json) | |
+| قالب الإعدادات الكامل | [policy-defaults.json](data/config-defaults/policy-defaults.json) | |
 
-القيم الافتراضية للسياسات أمثلة، وتراجعها كل مؤسسة حسب سياساتها وقانون العمل المحلي.
+قيم السياسات نقطة بداية مأخوذة من قانون العمل في كل دولة، ويجب أن يراجعها مستشار قانوني قبل الاستخدام. الوثائق التقنية تستخدم المصطلحات العامة للمنصة: المنحة هناك هي مركز التكلفة هنا، ودور المدير القطري هو المدير العام.
 
 </div>
 

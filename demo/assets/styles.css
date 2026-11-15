@@ -749,7 +749,7 @@ button, [data-act], .btn { touch-action: manipulation; }
 @media (pointer: coarse), (max-width: 720px) {
   :root { --h-control: 40px; --h-control-sm: 36px; }
   .btn.sm, .select.sm { font-size: var(--fs-table); padding-inline: var(--s-3); }
-  .seg button { height: 34px; padding-inline: 12px; }
+  .seg button { height: 40px; padding-inline: 12px; }
   .rate button { width: 38px; height: 36px; font-size: var(--fs-table); }
   .pg { min-width: 36px; height: 36px; }
   .cbx, .radio input, label > input[type="checkbox"], label > input[type="radio"] { width: 20px; height: 20px; }

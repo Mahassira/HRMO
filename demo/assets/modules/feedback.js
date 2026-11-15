@@ -19,7 +19,7 @@
     ['EMPLOYEE', 'person', ['الموظف', 'Employee'], ['اطلب إجازة وشاهد فحص السياسات', 'Request leave and see the policy checks'], ['اطلب خطاب تعريف بالراتب', 'Ask for a salary letter']],
     ['MANAGER', 'people', ['المدير المباشر', 'Line manager'], ['وافق على طلبات الفريق من صندوق واحد', 'Approve team requests from one inbox'], ['افتح تقييم أداء أحد أعضاء الفريق', 'Open a team member appraisal']],
     ['HR', 'doc', ['الموارد البشرية', 'HR'], ['تابع ملف استقبال موظف جديد', 'Follow a new starter onboarding file'], ['أنه خدمة موظف حتى التسوية النهائية', 'Close a separation up to final settlement']],
-    ['CD', 'shield', ['المدير القطري', 'Country Director'], ['اعتمد قرارا وشاهد المخالفات تلقائيا', 'Approve a decision with automatic policy flags'], ['راجع الكلفة والالتزامات حسب المنحة', 'Review cost and liabilities by grant']]
+    ['CD', 'shield', ['المدير العام', 'General Manager'], ['اعتمد قرارا وشاهد المخالفات تلقائيا', 'Approve a decision with automatic policy flags'], ['راجع الكلفة والالتزامات حسب مركز التكلفة', 'Review cost and liabilities by cost centre']]
   ];
 
   // ---------- Welcome screen ----------
@@ -33,7 +33,7 @@
       <div class="welcome-top"><img src="assets/brand/apple-touch-icon.png" alt="" width="56" height="56">${langs}</div>
       <h1>${esc(title)}</h1>
       ${out ? `<p class="welcome-lead">${esc(L('سجلت خروجك. اختر الحساب الذي تريد الدخول به.', 'You are signed out. Choose the account to sign in with.'))}</p>`
-    : `<p class="welcome-lead">${esc(L('نظام لإدارة الموارد البشرية في المؤسسات الإنسانية وغير الربحية. هذه نسخة تجريبية ببيانات وهمية، ونريد رأيك فيها قبل استكمال البناء.', 'An HR management system for humanitarian and non-profit organizations. This is a trial version with fictitious data, and we would like your view before building further.'))}</p>
+    : `<p class="welcome-lead">${esc(L('نظام لإدارة الموارد البشرية مهيأ لشركة شحن وخدمات لوجستية: مقر رئيسي في القاهرة وفروع في دمياط والسخنة وسفاجا ودبي. هذه نسخة تجريبية ببيانات وهمية، ونريد رأيك فيها قبل استكمال البناء.', 'An HR management system configured for a shipping and logistics company: Cairo head office with branches in Damietta, Ain Sokhna, Safaga and Dubai. This is a trial version with fictitious data, and we would like your view before building further.'))}</p>
       <div class="field welcome-name"><label for="wl-name">${esc(L('اسمك (يظهر مع ملاحظاتك)', 'Your name (shown with your feedback)'))}</label><input id="wl-name" class="input" data-wl="name" value="${esc(TESTER.name)}" autocomplete="name" placeholder="${esc(L('اختياري', 'Optional'))}"></div>
       <h2>${esc(L('اختر واجهة للبدء', 'Choose a workspace to start'))}</h2>`}
       <div class="welcome-roles">${ROLE_CARDS.map(card).join('')}</div>
@@ -52,7 +52,7 @@
 
   EXT.overlays.feedback = () => modal(L('ملاحظة أو اقتراح تحسين', 'Feedback or improvement'), `<div class="form-grid">
       <div class="field full"><span class="flabel">${esc(L('النوع', 'Type'))}</span><div class="radio-group fb-types">${Object.entries(TYPES).map(([k, v]) => `<label class="radio"><input type="radio" name="fb-type" value="${k}" data-fb="type" ${S.fb.type === k ? 'checked' : ''}><span>${esc(L(...v))}</span></label>`).join('')}</div></div>
-      <div class="field full"><label for="fb-text">${esc(L('ماذا لاحظت؟ وما الذي تقترحه؟', 'What did you notice, and what would you suggest?'))}</label><textarea id="fb-text" class="textarea" style="min-height:120px" data-fb="text" placeholder="${esc(L('مثال: مدة الإشعار للإجازة السنوية في مؤسستنا 14 يوما وليست 7.', 'Example: in our organization the notice for annual leave is 14 days, not 7.'))}">${esc(S.fb.text)}</textarea></div>
+      <div class="field full"><label for="fb-text">${esc(L('ماذا لاحظت؟ وما الذي تقترحه؟', 'What did you notice, and what would you suggest?'))}</label><textarea id="fb-text" class="textarea" style="min-height:120px" data-fb="text" placeholder="${esc(L('مثال: مدة الإشعار للإجازة السنوية في شركتنا 14 يوما وليست 7.', 'Example: in our company the notice for annual leave is 14 days, not 7.'))}">${esc(S.fb.text)}</textarea></div>
       <div class="field"><label for="fb-prio">${esc(L('الأهمية', 'Priority'))}</label><select id="fb-prio" class="select" data-fb="priority">${Object.entries(PRIO).map(([k, v]) => `<option value="${k}" ${S.fb.priority === k ? 'selected' : ''}>${esc(L(...v))}</option>`).join('')}</select></div>
       <div class="field"><span class="flabel">${esc(L('تقييمك لهذه الشاشة (اختياري)', 'Your rating of this screen (optional)'))}</span><div class="rate" role="group">${[1, 2, 3, 4, 5].map((n) => `<button data-act="fb-rate" data-v="${n}" aria-pressed="${S.fb.rating === n}" aria-label="${n}">${n}</button>`).join('')}</div></div>
       <div class="field full"><span class="flabel">${esc(L('الشاشة', 'Screen'))}</span><div class="subtle">${esc(`${H.roleLabel(S.role)} · ${S.fb.area || '—'}`)}</div></div>

@@ -1,10 +1,10 @@
-/* HRMO module — HR metrics, end-of-service liability, diversity & localization, volunteers,
- * country-office selector. Rules: KP-001..005, DI-001..004, SP-004, CAT-007. */
+/* HRMO module — HR metrics, end-of-service liability, diversity & localization, daily labour,
+ * countries-of-operation selector. Rules: KP-001..005, DI-001..004, SP-004, CAT-007. */
 (function () {
   'use strict';
   const H = window.HRMO;
   const { S, D, EXT, L, T, esc, icon, fmtN, fmtD, money, daysBetween, badge, rule, toast, store, kpi, bars, serviceDays, balances, openMenu, mItem } = H;
-  H.CAT.VOLUNTEER = { ar: 'عامل بحوافز / متطوع', en: 'Incentive worker / volunteer' };
+  
   const regular = () => D.employees.filter((e) => e.category === 'REGULAR');
 
   // ---------- Metrics ----------
@@ -36,13 +36,13 @@
   // ---------- Liabilities, diversity & localization (CD) ----------
   EXT.cdDash.push(() => {
     const reg = regular();
-    const eos = reg.reduce((s, e) => s + Math.floor(serviceDays(e) / 365.25) * D.POLICY.separation.severanceMonthsPerYear * e.baseSalary, 0);
-    const lv = reg.reduce((s, e) => s + Math.max(0, balances(e).annual.available) * (e.baseSalary / D.POLICY.workingDaysPerMonth), 0);
-    const all = D.employees.filter((e) => e.category !== 'VOLUNTEER'); const lead = all.filter((e) => e.grade >= 8);
+    const eos = reg.reduce((s, e) => s + Math.floor(serviceDays(e) / 365.25) * H.policyFor(e).separation.severanceMonthsPerYear * H.toBase(e), 0);
+    const lv = reg.reduce((s, e) => s + Math.max(0, balances(e).annual.available) * (H.toBase(e) / D.POLICY.workingDaysPerMonth), 0);
+    const all = D.employees.slice(); const lead = all.filter((e) => e.grade >= 8);
     const pct = (a, b) => (b ? (a / b) * 100 : 0);
     const women = pct(all.filter((e) => e.gender === 'F').length, all.length); const womenLead = pct(lead.filter((e) => e.gender === 'F').length, lead.length);
     const natLead = pct(lead.filter((e) => e.staffType !== 'INTL').length, lead.length); const dis = pct(all.filter((e) => e.disability).length, all.length);
-    const vol = D.employees.filter((e) => e.category === 'VOLUNTEER').length;
+    const vol = D.employees.filter((e) => e.category === 'DAILY').length; const uae = all.filter((e) => e.country === 'AE'); const natUae = pct(uae.filter((e) => e.staffType === 'NATL').length, uae.length);
     return `<div class="grid g-2">
       <section class="card"><h2>${esc(L('الالتزامات المالية تجاه الموظفين', 'Staff-related liabilities'))}</h2><div class="stat-list">
         <div class="row"><span>${esc(L('مكافأة نهاية الخدمة المتراكمة', 'Accrued end-of-service benefit'))} ${rule('SP-004')}</span><b>${money(eos)}</b></div>
@@ -52,15 +52,17 @@
       <section class="card"><h2>${esc(L('التنوع والتوطين', 'Diversity & localization'))} ${rule('DI-001')}</h2><div class="stat-list">
         <div class="row"><span>${esc(L('النساء من إجمالي الموظفين', 'Women in the workforce'))}</span><b>${fmtN(women, 1)}%</b></div>
         <div class="row"><span>${esc(L('النساء في المناصب القيادية (G8+)', 'Women in leadership (G8+)'))}</span><b>${fmtN(womenLead, 1)}%</b></div>
-        <div class="row"><span>${esc(L('الكوادر الوطنية في القيادة', 'National staff in leadership'))} ${rule('DI-002')}</span><b>${fmtN(natLead, 1)}%</b></div>
+        <div class="row"><span>${esc(L('المواطنون في القيادة', 'Nationals in leadership'))} ${rule('DI-002')}</span><b>${fmtN(natLead, 1)}%</b></div>
         <div class="row"><span>${esc(L('موظفون من ذوي الإعاقة', 'Staff with disabilities'))} ${rule('DI-003')}</span><b>${fmtN(dis, 1)}%</b></div>
-        <div class="row"><span>${esc(L('عاملون بحوافز ومتطوعون', 'Incentive workers & volunteers'))} ${rule('CAT-007')}</span><b>${fmtN(vol)}</b></div></div>
-        <p class="subtle" style="margin:8px 0 0">${esc(L('مؤشرات يطلبها المانحون في التقارير.', 'Indicators donors ask for in reports.'))}</p></section></div>`;
+        <div class="row"><span>${esc(L('نسبة التوطين في فرع دبي', 'Emiratisation rate, Dubai branch'))}</span><b>${fmtN(natUae, 1)}%</b></div>
+        <div class="row"><span>${esc(L('العمالة اليومية', 'Daily labour'))} ${rule('CAT-007')}</span><b>${fmtN(vol)}</b></div></div>
+        <p class="subtle" style="margin:8px 0 0">${esc(L('مؤشرات تتابعها الإدارة والجهات الرقابية في كل دولة.', 'Indicators tracked by management and regulators in each country.'))}</p></section></div>`;
   });
 
-  // ---------- Country office selector ----------
-  EXT.topbar.push(() => `<button class="ws-switch hide-md" data-act="menu-country" aria-haspopup="menu" title="${esc(L('المكتب القُطري', 'Country office'))}">${icon('globe', 14)}<span class="wl">${esc(L('الدولة النموذجية', 'Sample Country'))}</span>${icon('down', 12)}</button>`);
-  EXT.actions['menu-country'] = (t) => openMenu(t, `<div class="menu-label">${esc(L('المكاتب القُطرية', 'Country offices'))}</div>${mItem('noop', 'globe', L('الدولة النموذجية', 'Sample Country'), '', L(`${D.OFFICES.length} مكاتب · ${D.employees.length} موظفاً · مجموعة سياسات نموذجية`, `${D.OFFICES.length} offices · ${D.employees.length} staff · Sample policy set`), true)}<div class="menu-sep"></div>${mItem('country-add', 'plus', L('إضافة مكتب قُطري', 'Add a country office'), '', L('لكل دولة مجموعة سياسات حسب قانون عملها', 'Each country gets its own policy set per local labor law'))}`, 'start', 'country');
+  // ---------- Countries of operation (one policy set and currency each) ----------
+  const cSum = (c) => { const offs = D.OFFICES.filter((o) => o.country === c.id); const n = D.employees.filter((e) => e.country === c.id).length; return L(`${offs.length} مقار · ${n} موظفا · ${H.curLabel(c.currency)} · ${T(c.law)}`, `${offs.length} location${offs.length > 1 ? 's' : ''} · ${n} staff · ${H.curLabel(c.currency)} · ${T(c.law)}`); };
+  EXT.topbar.push(() => `<button class="ws-switch hide-md" data-act="menu-country" aria-haspopup="menu" title="${esc(L('دول العمل', 'Countries of operation'))}">${icon('globe', 14)}<span class="wl">${esc(L('مصر والإمارات', 'Egypt & UAE'))}</span>${icon('down', 12)}</button>`);
+  EXT.actions['menu-country'] = (t) => openMenu(t, `<div class="menu-label">${esc(L('دول العمل', 'Countries of operation'))}</div>${D.COUNTRIES.map((c) => mItem('noop', 'globe', T(c), '', cSum(c), c.id === 'EG')).join('')}<div class="menu-sep"></div>${mItem('country-add', 'plus', L('إضافة دولة', 'Add a country'), '', L('لكل دولة مجموعة سياسات وعملة حسب قانون عملها', 'Each country gets its own policy set and currency under local labour law'))}`, 'start', 'country');
   EXT.actions.noop = () => {};
-  EXT.actions['country-add'] = () => toast(L('في النسخة الفعلية: يُنشأ مكتب قُطري جديد بنسخة من مجموعة السياسات لتعديلها حسب قانون العمل المحلي.', 'In production: a new country office is created with a copy of the policy set to adapt to local labor law.'));
+  EXT.actions['country-add'] = () => toast(L('في النسخة الفعلية: تضاف دولة جديدة بنسخة من مجموعة السياسات لتعديلها حسب قانون العمل المحلي.', 'In production: a new country is added with a copy of the policy set to adapt to local labour law.'));
 })();

@@ -1,0 +1,351 @@
+{
+  "$schemaVersion": "0.1.0",
+  "templateName": "Shipping & logistics company: Egypt and UAE policy sets",
+  "description": "Country policy sets used by the HRMO shipping edition. Values are starting defaults taken from the labour law of each country (Egypt Labour Law No. 14 of 2025; UAE Federal Decree-Law No. 33 of 2021) and company practice. They must be reviewed by legal counsel before production use. Keys map to rule IDs in docs/en/system-reference.md; any key not listed here falls back to policy-defaults.json.",
+  "company": {
+    "headOffice": "CAI",
+    "baseCurrency": "EGP",
+    "fxToBase": {
+      "EGP": 1,
+      "AED": 13
+    },
+    "fxNote": "Illustrative rate for consolidated figures only; payroll is paid in the local currency.",
+    "locations": [
+      {
+        "id": "CAI",
+        "name": "Cairo Head Office",
+        "nameAr": "القاهرة (الرئيسي)",
+        "country": "EG",
+        "reportsTo": null,
+        "siteAllowanceBand": "A",
+        "headcount": 50
+      },
+      {
+        "id": "DAM",
+        "name": "Damietta Branch",
+        "nameAr": "فرع دمياط",
+        "country": "EG",
+        "reportsTo": "CAI",
+        "siteAllowanceBand": "B",
+        "headcount": 29
+      },
+      {
+        "id": "SOK",
+        "name": "Ain Sokhna Branch",
+        "nameAr": "فرع السخنة",
+        "country": "EG",
+        "reportsTo": "CAI",
+        "siteAllowanceBand": "B",
+        "headcount": 32
+      },
+      {
+        "id": "SAF",
+        "name": "Safaga Branch",
+        "nameAr": "فرع سفاجا",
+        "country": "EG",
+        "reportsTo": "CAI",
+        "siteAllowanceBand": "C",
+        "headcount": 17
+      },
+      {
+        "id": "DXB",
+        "name": "Dubai Branch",
+        "nameAr": "فرع دبي",
+        "country": "AE",
+        "reportsTo": "CAI",
+        "siteAllowanceBand": "A",
+        "headcount": 22
+      }
+    ],
+    "departments": [
+      {
+        "id": "OPS",
+        "name": "Freight Operations",
+        "nameAr": "عمليات الشحن"
+      },
+      {
+        "id": "CUS",
+        "name": "Customs Clearance",
+        "nameAr": "التخليص الجمركي"
+      },
+      {
+        "id": "PRT",
+        "name": "Port Operations",
+        "nameAr": "عمليات الموانئ"
+      },
+      {
+        "id": "TRN",
+        "name": "Inland Transport",
+        "nameAr": "النقل البري"
+      },
+      {
+        "id": "WHS",
+        "name": "Warehousing",
+        "nameAr": "المستودعات"
+      },
+      {
+        "id": "FIN",
+        "name": "Finance",
+        "nameAr": "المالية"
+      },
+      {
+        "id": "HRM",
+        "name": "Human Resources",
+        "nameAr": "الموارد البشرية"
+      },
+      {
+        "id": "COM",
+        "name": "Sales & Customer Service",
+        "nameAr": "المبيعات وخدمة العملاء"
+      },
+      {
+        "id": "HSE",
+        "name": "HSE & Security",
+        "nameAr": "السلامة والأمن"
+      },
+      {
+        "id": "ADM",
+        "name": "Administration & IT",
+        "nameAr": "الإدارة وتقنية المعلومات"
+      }
+    ],
+    "costCentres": [
+      {
+        "id": "CC-101",
+        "name": "Sea & Air Freight",
+        "nameAr": "الشحن البحري والجوي",
+        "type": "Business line"
+      },
+      {
+        "id": "CC-102",
+        "name": "Container Terminal Handling Contract",
+        "nameAr": "عقد تشغيل محطة الحاويات",
+        "type": "Client contract"
+      },
+      {
+        "id": "CC-103",
+        "name": "Customs Clearance",
+        "nameAr": "التخليص الجمركي",
+        "type": "Business line"
+      },
+      {
+        "id": "CC-104",
+        "name": "Inland Transport & Warehousing",
+        "nameAr": "النقل البري والتخزين",
+        "type": "Client contract"
+      },
+      {
+        "id": "CC-105",
+        "name": "Corporate Overhead",
+        "nameAr": "الإدارة العامة",
+        "type": "Overhead"
+      }
+    ]
+  },
+  "notes": {
+    "EG": [
+      "Annual leave by law is 15 days in the first year, 21 days after one year and 30 days after ten years of service or from age 50; the single value here is the standard band.",
+      "Sick pay in Egypt is largely paid through social insurance; the full and half pay days here are company defaults.",
+      "End-of-service benefit of half a month per year is a company scheme, not a general statutory entitlement.",
+      "Overtime premium is 35% by day and 70% by night; the multiplier here is the day rate."
+    ],
+    "AE": [
+      "Annual leave is 30 calendar days after one year of service, and two days per month between six months and one year.",
+      "Sick leave after probation: 15 days full pay, 30 days half pay, then 45 days unpaid.",
+      "Maternity leave is 60 days (45 full pay and 15 half pay), stored here as 9 weeks.",
+      "End-of-service gratuity is 21 days of basic pay per year for the first five years and 30 days per year after that; 0.7 month is the first band.",
+      "Overtime premium is 25%, and 50% at night; the multiplier here is the day rate.",
+      "Notice period is 30 to 90 days as agreed in the contract."
+    ]
+  },
+  "policySets": {
+    "EG": {
+      "country": "EG",
+      "currency": "EGP",
+      "workWeek": {
+        "days": [
+          "SUN",
+          "MON",
+          "TUE",
+          "WED",
+          "THU"
+        ],
+        "hoursPerDay": 8,
+        "startTime": "08:00"
+      },
+      "workingDaysPerMonth": 22,
+      "probationMonths": 3,
+      "lateMarksThreshold": 3,
+      "consecutiveAbsenceCaseDays": 5,
+      "overtimeMultiplier": 1.35,
+      "overtimeMaxHoursPerDay": 2,
+      "meritMaxPercent": 10,
+      "bonusMaxPercent": 10,
+      "actingAllowancePercent": 10,
+      "actingMaxMonths": 4,
+      "warningValidityMonths": 12,
+      "resignationNoticeDays": 90,
+      "giftThreshold": 1500,
+      "travel": {
+        "perNight": {
+          "STANDARD": 900,
+          "HIGH": 1400
+        },
+        "minHoursWithoutOvernight": 8
+      },
+      "flags": {
+        "sickInProbation": true,
+        "overtimePreApproval": true,
+        "reackOnNewVersion": true,
+        "deemedResignationAuto": false
+      },
+      "care": {
+        "rrEveryWeeks": 6,
+        "rrDays": 5,
+        "burnoutNoLeaveMonths": 6,
+        "hardship": {
+          "A": 0,
+          "B": 10,
+          "C": 20
+        },
+        "safetyEscalateMinutes": 60
+      },
+      "licenses": {
+        "alertDays": 60
+      },
+      "helpdesk": {
+        "slaBusinessDays": 3
+      },
+      "separation": {
+        "severanceMonthsPerYear": 0.5,
+        "redundancyNoticeDays": 90
+      },
+      "leave": {
+        "ANNUAL": {
+          "entitlementDays": 21,
+          "accrual": "MONTHLY",
+          "minServiceMonths": 6,
+          "carryOverMaxDays": 0
+        },
+        "SICK": {
+          "fullPayDays": 30,
+          "halfPayDays": 60,
+          "notifyWithinHours": 48
+        },
+        "BEREAVEMENT": {
+          "daysPerEvent": 3
+        },
+        "MATERNITY": {
+          "durationWeeks": 17,
+          "minServiceDays": 0
+        },
+        "PATERNITY": {
+          "days": 1,
+          "useWithinWeeks": 1
+        },
+        "UNPAID": {
+          "minServiceMonths": 6,
+          "maxDaysPerYear": 20,
+          "noticeBusinessDays": 5
+        },
+        "COMP": {
+          "expiresAfterDays": 10
+        }
+      }
+    },
+    "AE": {
+      "country": "AE",
+      "currency": "AED",
+      "workWeek": {
+        "days": [
+          "MON",
+          "TUE",
+          "WED",
+          "THU",
+          "FRI"
+        ],
+        "hoursPerDay": 8,
+        "startTime": "08:30"
+      },
+      "workingDaysPerMonth": 22,
+      "probationMonths": 6,
+      "lateMarksThreshold": 3,
+      "consecutiveAbsenceCaseDays": 5,
+      "overtimeMultiplier": 1.25,
+      "overtimeMaxHoursPerDay": 2,
+      "meritMaxPercent": 10,
+      "bonusMaxPercent": 10,
+      "actingAllowancePercent": 10,
+      "actingMaxMonths": 4,
+      "warningValidityMonths": 12,
+      "resignationNoticeDays": 30,
+      "giftThreshold": 200,
+      "travel": {
+        "perNight": {
+          "STANDARD": 250,
+          "HIGH": 400
+        },
+        "minHoursWithoutOvernight": 8
+      },
+      "flags": {
+        "sickInProbation": true,
+        "overtimePreApproval": true,
+        "reackOnNewVersion": true,
+        "deemedResignationAuto": false
+      },
+      "care": {
+        "rrEveryWeeks": 6,
+        "rrDays": 5,
+        "burnoutNoLeaveMonths": 6,
+        "hardship": {
+          "A": 0,
+          "B": 10,
+          "C": 20
+        },
+        "safetyEscalateMinutes": 60
+      },
+      "licenses": {
+        "alertDays": 60
+      },
+      "helpdesk": {
+        "slaBusinessDays": 3
+      },
+      "separation": {
+        "severanceMonthsPerYear": 0.7,
+        "redundancyNoticeDays": 30
+      },
+      "leave": {
+        "ANNUAL": {
+          "entitlementDays": 30,
+          "accrual": "MONTHLY",
+          "minServiceMonths": 6,
+          "carryOverMaxDays": 0
+        },
+        "SICK": {
+          "fullPayDays": 15,
+          "halfPayDays": 30,
+          "notifyWithinHours": 72
+        },
+        "BEREAVEMENT": {
+          "daysPerEvent": 5
+        },
+        "MATERNITY": {
+          "durationWeeks": 9,
+          "minServiceDays": 0
+        },
+        "PATERNITY": {
+          "days": 5,
+          "useWithinWeeks": 26
+        },
+        "UNPAID": {
+          "minServiceMonths": 6,
+          "maxDaysPerYear": 20,
+          "noticeBusinessDays": 5
+        },
+        "COMP": {
+          "expiresAfterDays": 10
+        }
+      }
+    }
+  }
+}

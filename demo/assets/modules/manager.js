@@ -33,8 +33,8 @@
     push(tm[3], 'ANNUAL', addDays(TODAY, -1), 3, 'APPROVED', 13);
     push(tm[4], 'ANNUAL', addDays(TODAY, 9), 4, 'APPROVED', 14);
     push(tm[5], 'COMP', addDays(TODAY, 2), 0, 'APPROVED', 15);
-    OT.push({ id: 'OT-1001', empId: tm[6].id, date: iso(addDays(TODAY, 1)), hours: 2, mode: 'PAY', reason: { ar: 'تغطية عيادة متنقلة', en: 'Cover mobile clinic' }, status: 'PENDING' });
-    OT.push({ id: 'OT-1002', empId: tm[7].id, date: iso(addDays(TODAY, 3)), hours: 1.5, mode: 'COMP', reason: { ar: 'توزيع طارئ', en: 'Emergency distribution' }, status: 'PENDING' });
+    OT.push({ id: 'OT-1001', empId: tm[6].id, date: iso(addDays(TODAY, 1)), hours: 2, mode: 'PAY', reason: { ar: 'إنهاء مستندات سفينة تغادر الليلة', en: 'Close documents for a vessel sailing tonight' }, status: 'PENDING' });
+    OT.push({ id: 'OT-1002', empId: tm[7].id, date: iso(addDays(TODAY, 3)), hours: 1.5, mode: 'COMP', reason: { ar: 'شحنة جوية عاجلة', en: 'Urgent air shipment' }, status: 'PENDING' });
     D.activity.unshift({ id: 'AM1', role: 'MANAGER', ch: 'teams', at: D.todayISO, ar: '3 طلبات إجازة بانتظار موافقتك', en: '3 leave requests awaiting your approval', go: 'approvals' });
     D.activity.unshift({ id: 'AM2', role: 'MANAGER', ch: 'outlook', at: D.todayISO, ar: 'كشوف دوام الفريق جاهزة للاعتماد', en: 'Team timesheets are ready for approval', go: 'approvals' });
     EXT.state.mgrSeeded = true;
@@ -117,7 +117,7 @@
     const tsSub = tsList.length;
     return `${pageHead(L('موافقات الفريق', 'Team approvals'), esc(L('كل طلب يصلك أيضاً كبطاقة تفاعلية في Teams وOutlook.', 'Every request also reaches you as an actionable card in Teams and Outlook.')))}
       ${sec(L('طلبات الإجازة', 'Leave requests'), lv.length, 'LV-001', table([L('الموظف', 'Employee'), L('النوع', 'Type'), L('الفترة', 'Period'), L('الأيام', 'Days'), L('فحص السياسة', 'Policy check'), ''], lvRows, emptyState('check', L('لا توجد طلبات إجازة معلّقة', 'No pending leave'))))}
-      ${sec(L('كشوف الدوام', 'Timesheets'), tsSub, 'TS-004', table([L('الموظف', 'Employee'), L('أيام العمل', 'Work days'), L('توزيع المنح', 'Grant split'), ''], tsRows.filter(Boolean), emptyState('check', L('لا توجد كشوف بانتظارك', 'No timesheets waiting'))), tsSub ? `<button class="btn sm secondary" data-act="mgr-ts-all">${esc(L('اعتماد الكل', 'Approve all'))}</button>` : '')}
+      ${sec(L('كشوف الدوام', 'Timesheets'), tsSub, 'TS-004', table([L('الموظف', 'Employee'), L('أيام العمل', 'Work days'), L('مراكز التكلفة', 'Cost centres'), ''], tsRows.filter(Boolean), emptyState('check', L('لا توجد كشوف بانتظارك', 'No timesheets waiting'))), tsSub ? `<button class="btn sm secondary" data-act="mgr-ts-all">${esc(L('اعتماد الكل', 'Approve all'))}</button>` : '')}
       ${sec(L('العمل الإضافي', 'Overtime'), ot.length, 'WT-020', table([L('الموظف', 'Employee'), L('التاريخ', 'Date'), L('الساعات', 'Hours'), L('التعويض', 'Compensation'), L('السبب', 'Reason'), ''], otRows, emptyState('check', L('لا توجد طلبات عمل إضافي', 'No overtime requests'))))}
       ${EXT.mgrSections.map((fn) => fn(sec)).join('')}`;
   }
@@ -126,7 +126,7 @@
   function vCalendar() {
     const base = new Date(TODAY.getFullYear(), TODAY.getMonth() + S.calOffset, 1);
     const days = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
-    const hol = new Set(D.HOLIDAYS.map((h) => h.date));
+    const hol = new Set(H.holidaysFor(H.policyFor(H.persona())).map((h) => h.date));
     const tm = [persona(), ...team()];
     const head = Array.from({ length: days }, (_, i) => { const d = new Date(base.getFullYear(), base.getMonth(), i + 1); return `<th class="${iso(d) === D.todayISO ? 'today' : ''}">${i + 1}</th>`; }).join('');
     const rows = tm.map((e) => {
@@ -178,8 +178,8 @@
     if (D.POLICY.flags.overtimePreApproval && d.date < D.todayISO) out.errors.push(R('WT-020', 'يجب اعتماد العمل الإضافي قبل تنفيذه، ولا يُقبل بأثر رجعي.', 'Overtime must be approved before it is worked; retroactive requests are not accepted.'));
     if (hrs <= 0) out.errors.push(R('WT-022', 'أدخل عدد الساعات.', 'Enter the number of hours.'));
     if (hrs > D.POLICY.overtimeMaxHoursPerDay) out.errors.push(R('WT-022', `الحد الأقصى ${D.POLICY.overtimeMaxHoursPerDay} ساعة في اليوم.`, `Maximum ${D.POLICY.overtimeMaxHoursPerDay} hours per day.`));
-    const e = me(); const hourly = e.baseSalary / D.POLICY.workingDaysPerMonth / D.POLICY.workWeek.hoursPerDay;
-    if (d.mode === 'PAY') out.info.push(R('WT-021', `القيمة التقديرية: ${money(hrs * hourly * D.POLICY.overtimeMultiplier)} (معامل ${D.POLICY.overtimeMultiplier}).`, `Estimated amount: ${money(hrs * hourly * D.POLICY.overtimeMultiplier)} (×${D.POLICY.overtimeMultiplier}).`));
+    const e = me(); const POL = H.policyFor(e); const hourly = e.baseSalary / POL.workingDaysPerMonth / POL.workWeek.hoursPerDay;
+    if (d.mode === 'PAY') out.info.push(R('WT-021', `القيمة التقديرية: ${money(hrs * hourly * POL.overtimeMultiplier, e.currency)} (معامل ${POL.overtimeMultiplier}).`, `Estimated amount: ${money(hrs * hourly * POL.overtimeMultiplier, e.currency)} (×${POL.overtimeMultiplier}).`));
     else out.info.push(R('LV-080', `تُضاف ${fmtN(hrs / D.POLICY.workWeek.hoursPerDay, 2)} يوم لرصيدك التعويضي بعد الاعتماد، وتسقط بعد ${D.POLICY.leave.COMP.expiresAfterDays} أيام.`, `${fmtN(hrs / D.POLICY.workWeek.hoursPerDay, 2)} day(s) added to your compensatory balance after approval; expires after ${D.POLICY.leave.COMP.expiresAfterDays} days.`));
     if (!isWorkDay(parse(d.date))) out.warnings.push(R('LV-082', 'يوم عطلة: تأكد ألا تتجاوز 10 أيام عمل متتالية دون راحة.', 'Rest day: make sure you do not exceed 10 consecutive working days.'));
     return out;
@@ -212,7 +212,7 @@
   addNav('MANAGER', 'overview', ['نظرة عامة', 'Overview'], { v: 'team', ic: 'people', ar: 'فريقي', en: 'My team' });
   addNav('MANAGER', 'overview', ['نظرة عامة', 'Overview'], { v: 'approvals', ic: 'approve', ar: 'الموافقات', en: 'Approvals', badge: true });
   addNav('MANAGER', 'overview', ['نظرة عامة', 'Overview'], { v: 'calendar', ic: 'cal', ar: 'تقويم الفريق', en: 'Team calendar' });
-  addNav('MANAGER', 'org', ['المؤسسة', 'Organization'], { v: 'orgchart', ic: 'list', ar: 'الهيكل التنظيمي', en: 'Org chart' });
+  addNav('MANAGER', 'org', ['الشركة', 'Company'], { v: 'orgchart', ic: 'list', ar: 'الهيكل التنظيمي', en: 'Org chart' });
   Object.assign(VIEWS.MANAGER, { team: vTeam, approvals: vApprovals, calendar: vCalendar, orgchart: vOrg });
   addNav('HR', 'people', ['الموظفون', 'People'], { v: 'orgchart', ic: 'list', ar: 'الهيكل التنظيمي', en: 'Org chart' });
   VIEWS.HR.orgchart = vOrg;

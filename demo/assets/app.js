@@ -1,11 +1,13 @@
 /* HRMO demo — application (vanilla JS, no dependencies).
- * Three workspaces: Employee self-service, HR, Country Director.
+ * Workspaces: Employee self-service, Line manager, HR, General Manager.
+ * Edition: shipping & logistics company — Cairo head office with Damietta, Ain Sokhna, Safaga and Dubai branches.
  * Business rules reference IDs in docs/en/system-reference.md. */
 (function () {
   'use strict';
   const D = window.HRDATA;
   const STORE_KEY = 'hrmo-demo-v2';
-  const DEFAULT_POLICY = JSON.parse(JSON.stringify(D.POLICY));
+  const DEFAULT_SETS = JSON.parse(JSON.stringify(D.POLICY_SETS));
+  const DEFAULT_POLICY = DEFAULT_SETS.EG;
 
   // ======================================================================
   // State & persistence
@@ -35,7 +37,7 @@
       localStorage.setItem(STORE_KEY, JSON.stringify({
         role: S.role, lang: S.lang, theme: S.theme, view: S.view, collapsed: S.collapsed,
         leaveRequests: D.leaveRequests, approvals: D.approvals, candidates: D.candidates, activity: D.activity,
-        policy: D.POLICY, timesheet: S.timesheet, readActivity: S.readActivity, ext: EXT.state,
+        policySets: D.POLICY_SETS, timesheet: S.timesheet, readActivity: S.readActivity, ext: EXT.state,
         me: { ackMissing: me().ackMissing, leave: me().leave }
       }));
     } catch (e) { /* storage unavailable: demo keeps working in memory */ }
@@ -52,7 +54,7 @@
     if (saved.approvals) D.approvals = saved.approvals;
     if (saved.candidates) D.candidates = saved.candidates;
     if (saved.activity) D.activity = saved.activity;
-    if (saved.policy) D.POLICY = saved.policy;
+    if (saved.policySets && saved.policySets.EG && saved.policySets.AE) { D.POLICY_SETS = saved.policySets; D.POLICY = D.POLICY_SETS.EG; }
     if (saved.timesheet) S.timesheet = saved.timesheet;
     if (saved.readActivity) S.readActivity = saved.readActivity;
     if (saved.me) Object.assign(me(), saved.me);
@@ -71,7 +73,13 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const locale = () => (S.lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB');
   const fmtN = (n, d = 0) => new Intl.NumberFormat(locale(), { maximumFractionDigits: d, minimumFractionDigits: d }).format(n);
-  const money = (n, c = 'USD') => `${fmtN(Math.round(n))} ${c === 'USD' ? (S.lang === 'ar' ? 'دولار' : 'USD') : c}`;
+  const CUR = { EGP: { ar: 'جنيه', en: 'EGP' }, AED: { ar: 'درهم', en: 'AED' } };
+  const curLabel = (c = D.BASE_CUR) => (CUR[c] ? (S.lang === 'ar' ? CUR[c].ar : CUR[c].en) : c);
+  const money = (n, c = D.BASE_CUR) => `${fmtN(Math.round(n))} ${curLabel(c)}`;
+  // Consolidated figures are shown in the head-office currency at an illustrative, editable rate.
+  const toBase = (e) => e.baseSalary * (D.FX[e.currency] || 1);
+  const countryOf = (e) => (e && (e.country || (D.OFFICES.find((o) => o.id === e.office) || {}).country)) || 'EG';
+  const policyFor = (e) => D.POLICY_SETS[countryOf(e)] || D.POLICY;
   const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const TODAY = parse(D.todayISO);
@@ -96,7 +104,7 @@
   const LSTATUS = {
     PENDING_MANAGER: { ar: 'بانتظار المدير المباشر', en: 'Awaiting line manager', b: 'b-warn' },
     PENDING_HR: { ar: 'بانتظار الموارد البشرية', en: 'Awaiting HR', b: 'b-warn' },
-    PENDING_CD: { ar: 'بانتظار المدير القُطري', en: 'Awaiting Country Director', b: 'b-warn' },
+    PENDING_CD: { ar: 'بانتظار المدير العام', en: 'Awaiting General Manager', b: 'b-warn' },
     APPROVED: { ar: 'معتمدة', en: 'Approved', b: 'b-ok' },
     REJECTED: { ar: 'مرفوضة', en: 'Rejected', b: 'b-bad' }
   };
@@ -170,16 +178,18 @@
   // ======================================================================
   // Policy engine
   // ======================================================================
-  const holidaySet = () => new Set(D.HOLIDAYS.map((h) => h.date));
-  function isWorkDay(d) { return D.POLICY.workWeek.days.includes(DAYNAMES[d.getDay()]) && !holidaySet().has(iso(d)); }
-  function workingDays(fromS, toS) {
+  // Weekend and public holidays follow the country of employment (Egypt: Sun–Thu, UAE: Mon–Fri).
+  const holidaysFor = (pol) => D.HOLIDAYS.filter((h) => !h.country || h.country === (pol || D.POLICY).country);
+  const holidaySet = (pol) => new Set(holidaysFor(pol).map((h) => h.date));
+  function isWorkDay(d, pol) { const p = pol || D.POLICY; return p.workWeek.days.includes(DAYNAMES[d.getDay()]) && !holidaySet(p).has(iso(d)); }
+  function workingDays(fromS, toS, pol) {
     let n = 0; let d = parse(fromS); const end = parse(toS);
-    while (d <= end) { if (isWorkDay(d)) n++; d = addDays(d, 1); }
+    while (d <= end) { if (isWorkDay(d, pol)) n++; d = addDays(d, 1); }
     return n;
   }
-  function businessDaysUntil(toS) { // working days from tomorrow up to the day before "toS"
+  function businessDaysUntil(toS, pol) { // working days from tomorrow up to the day before "toS"
     let n = 0; let d = addDays(TODAY, 1); const end = parse(toS);
-    while (d < end) { if (isWorkDay(d)) n++; d = addDays(d, 1); }
+    while (d < end) { if (isWorkDay(d, pol)) n++; d = addDays(d, 1); }
     return n;
   }
   const serviceDays = (e) => daysBetween(e.hireDate, D.todayISO);
@@ -193,7 +203,7 @@
     return D.leaveRequests.filter((r) => r.empId === e.id && r.type === type && statuses.includes(r.status) && parse(r.from).getFullYear() === TODAY.getFullYear()).reduce((s, r) => s + r.days, 0);
   }
   function balances(e) {
-    const P2 = D.POLICY.leave;
+    const P2 = policyFor(e).leave;
     const ent = P2.ANNUAL.entitlementDays;
     const accrued = e.category !== 'REGULAR' ? 0 : P2.ANNUAL.accrual === 'ANNUAL_GRANT' ? ent : +(monthsAccruedThisYear(e) * ent / 12).toFixed(2);
     const pending = ['PENDING_MANAGER', 'PENDING_HR', 'PENDING_CD'];
@@ -211,17 +221,17 @@
 
   function validateLeave(e, req, ignoreId) {
     const out = { errors: [], warnings: [], info: [], days: 0 };
-    const P2 = D.POLICY.leave;
+    const POL = policyFor(e); const P2 = POL.leave;
     if (!req.from || !req.to) return out;
     if (parse(req.to) < parse(req.from)) { out.errors.push(R('LV-004', 'تاريخ النهاية قبل تاريخ البداية.', 'End date is before start date.')); return out; }
-    out.days = workingDays(req.from, req.to);
+    out.days = workingDays(req.from, req.to, POL);
     if (out.days === 0) out.errors.push(R('LV-003', 'الفترة المختارة لا تحتوي على أيام عمل (عطلة أسبوعية أو رسمية).', 'The selected range has no working days (weekend or public holiday).'));
     const overlap = D.leaveRequests.find((r) => r.empId === e.id && r.id !== ignoreId && r.status !== 'REJECTED' && parse(r.from) <= parse(req.to) && parse(r.to) >= parse(req.from));
     if (overlap) out.errors.push(R('LV-004', `تتداخل مع طلب ${overlap.id} (${fmtD(overlap.from)}).`, `Overlaps request ${overlap.id} (${fmtD(overlap.from)}).`));
     const retro = ['SICK', 'BEREAVEMENT'].includes(req.type);
     if (!retro && parse(req.from) < TODAY) out.errors.push(R('LV-001', 'يجب تقديم هذا النوع من الإجازات قبل أخذها.', 'This leave type must be requested before it is taken.'));
     const b = balances(e);
-    if (e.inProbation && (req.type !== 'SICK' || !D.POLICY.flags.sickInProbation)) out.warnings.push(R('LC-005', 'أنت في فترة التجربة: ستُسجَّل هذه الإجازة بدون راتب.', 'You are on probation: this leave will be recorded as unpaid.'));
+    if (e.inProbation && (req.type !== 'SICK' || !POL.flags.sickInProbation)) out.warnings.push(R('LC-005', 'أنت في فترة التجربة: ستُسجَّل هذه الإجازة بدون راتب.', 'You are on probation: this leave will be recorded as unpaid.'));
     switch (req.type) {
       case 'ANNUAL':
         if (serviceMonths(e) < P2.ANNUAL.minServiceMonths) out.errors.push(R('LV-012', `الإجازة السنوية متاحة بعد ${P2.ANNUAL.minServiceMonths} أشهر من الخدمة.`, `Annual leave is available after ${P2.ANNUAL.minServiceMonths} months of service.`));
@@ -242,9 +252,9 @@
         break;
       case 'UNPAID':
         if (serviceMonths(e) < P2.UNPAID.minServiceMonths) out.errors.push(R('LV-060', `تتطلب خدمة لا تقل عن ${P2.UNPAID.minServiceMonths} أشهر.`, `Requires at least ${P2.UNPAID.minServiceMonths} months of service.`));
-        if (businessDaysUntil(req.from) < P2.UNPAID.noticeBusinessDays) out.errors.push(R('LV-062', `يجب التقديم قبل ${P2.UNPAID.noticeBusinessDays} أيام عمل على الأقل.`, `Must be requested at least ${P2.UNPAID.noticeBusinessDays} working days in advance.`));
+        if (businessDaysUntil(req.from, POL) < P2.UNPAID.noticeBusinessDays) out.errors.push(R('LV-062', `يجب التقديم قبل ${P2.UNPAID.noticeBusinessDays} أيام عمل على الأقل.`, `Must be requested at least ${P2.UNPAID.noticeBusinessDays} working days in advance.`));
         if (b.unpaid.used + out.days > b.unpaid.max) out.errors.push(R('LV-061', `الحد السنوي ${b.unpaid.max} يوماً، استخدمت ${b.unpaid.used}.`, `Annual limit is ${b.unpaid.max} days; ${b.unpaid.used} already used.`));
-        out.info.push(R('LV-063', 'مسار الموافقة: المدير المباشر ← الموارد البشرية ← المدير القُطري.', 'Approval: line manager → HR → Country Director.'));
+        out.info.push(R('LV-063', 'مسار الموافقة: المدير المباشر ← الموارد البشرية ← المدير العام.', 'Approval: line manager → HR → General Manager.'));
         break;
       case 'MATERNITY':
         if (e.gender !== 'F') out.errors.push(R('LV-040', 'هذا النوع غير متاح لك.', 'This leave type is not available to you.'));
@@ -317,7 +327,7 @@
       { g: 'insights', ar: 'التحليلات', en: 'Insights', items: [{ v: 'workforce', ic: 'people', ar: 'القوى العاملة', en: 'Workforce' }, { v: 'compliance', ic: 'shield', ar: 'الامتثال', en: 'Compliance' }] }
     ]
   };
-  const ROLES = [['EMPLOYEE', 'الموظف', 'Employee', 'الخدمة الذاتية', 'Self-service'], ['HR', 'الموارد البشرية', 'HR', 'عمليات الموارد البشرية', 'HR operations'], ['CD', 'المدير القُطري', 'Country Director', 'القرارات والتحليلات', 'Decisions & insights']];
+  const ROLES = [['EMPLOYEE', 'الموظف', 'Employee', 'الخدمة الذاتية', 'Self-service'], ['HR', 'الموارد البشرية', 'HR', 'عمليات الموارد البشرية', 'HR operations'], ['CD', 'المدير العام', 'General Manager', 'القرارات والتحليلات', 'Decisions & insights']];
   const roleLabel = (r) => { const x = ROLES.find((y) => y[0] === r); return L(x[1], x[2]); };
 
   function unreadCount() { return D.activity.filter((a) => a.role === S.role && !S.readActivity.includes(a.id)).length; }
@@ -484,7 +494,7 @@
     e.ackMissing.forEach((c) => { const p = D.POLICIES.find((x) => x.code === c); tasks.push({ ic: 'shield', t: L(`الإقرار بسياسة: ${p.ar}`, `Acknowledge policy: ${p.en}`), s: L('مطلوب للامتثال', 'Required for compliance'), r: 'ON-004', act: 'nav', v: 'policies' }); });
     if (ts.status === 'DRAFT') tasks.push({ ic: 'clock', t: L('تسليم كشف الدوام الشهري', 'Submit monthly timesheet'), s: L(`الموعد: ${fmtD(iso(lwd))} (بعد ${tsDays} يوم)`, `Due ${fmtD(iso(lwd))} (in ${tsDays} days)`), r: 'TS-003', act: 'nav', v: 'timesheet' });
     tasks.push({ ic: 'flag', t: L('مراجعة الأهداف الربعية مع المدير', 'Quarterly objectives review with your manager'), s: L('ضمن دورة الأداء', 'Part of the performance cycle'), r: 'PF-010' });
-    const upcoming = D.HOLIDAYS.filter((h) => h.date >= D.todayISO).slice(0, 3);
+    const upcoming = holidaysFor(policyFor(me())).filter((h) => h.date >= D.todayISO).slice(0, 3);
     return `
       <div class="page-head"><div><h1>${esc(L(`مرحباً ${e.name.ar.split(' ')[0]}`, `Welcome, ${e.name.en.split(' ')[0]}`))}</h1><p>${esc(`${T(e.position)} · ${T(e.deptName)} · ${officeName(e.office)}`)}</p></div>
         <div class="btn-row"><button class="btn primary" data-act="nav" data-v="leave">${icon('cal', 16)}${esc(L('طلب إجازة', 'Request leave'))}</button></div></div>
@@ -512,7 +522,7 @@
     const v = validateLeave(e, d);
     const canSubmit = d.from && d.to && !v.errors.length && v.days > 0;
     return `
-      <div class="page-head"><div><h1>${esc(L('إجازاتي', 'My leave'))}</h1><p>${esc(L('الأرصدة محسوبة وفق سياسات المؤسسة الحالية.', 'Balances are calculated from your organization\'s current policy.'))}</p></div></div>
+      <div class="page-head"><div><h1>${esc(L('إجازاتي', 'My leave'))}</h1><p>${esc(L('الأرصدة محسوبة وفق سياسات الشركة الحالية.', 'Balances are calculated from your company\'s current policy.'))}</p></div></div>
       <div class="grid g-4 keep2">
         <div class="card balance"><span class="muted">${esc(T(LEAVE.ANNUAL))} ${rule('LV-010')}</span><span class="big">${fmtN(b.annual.available, 2)} <small>${esc(L('يوم متاح', 'days available'))}</small></span>${meter((b.annual.taken / Math.max(b.annual.entitlement, 1)) * 100)}<span class="subtle">${esc(L(`مستحق ${fmtN(b.annual.accrued, 2)} · مأخوذ ${fmtN(b.annual.taken)} · معلّق ${fmtN(b.annual.pending)}`, `Accrued ${fmtN(b.annual.accrued, 2)} · taken ${fmtN(b.annual.taken)} · pending ${fmtN(b.annual.pending)}`))}</span></div>
         <div class="card balance"><span class="muted">${esc(T(LEAVE.SICK))} ${rule('LV-022')}</span><span class="big">${fmtN(b.sick.full)} <small>${esc(L('براتب كامل', 'full pay'))}</small></span>${meter((b.sick.taken / 21) * 100)}<span class="subtle">${esc(L(`+ ${b.sick.half} يوم بنصف راتب`, `+ ${b.sick.half} days at half pay`))}</span></div>
@@ -563,7 +573,7 @@
     const st = { DRAFT: ['b-neutral', L('مسودة', 'Draft')], SUBMITTED: ['b-warn', L('بانتظار المدير', 'Awaiting manager')], APPROVED: ['b-ok', L('معتمد', 'Approved')] }[ts.status];
     const locked = ts.status !== 'DRAFT';
     const monthName = new Intl.DateTimeFormat(locale(), { month: 'long', year: 'numeric' }).format(TODAY);
-    const grants = D.GRANTS.filter((g) => ['GR-101', 'GR-104', 'GR-105'].includes(g.id));
+    const grants = D.GRANTS.filter((g) => ['CC-101', 'CC-104', 'CC-105'].includes(g.id));
     return `
       <div class="page-head"><div><h1>${esc(L('كشف الدوام', 'Timesheet'))} · ${esc(monthName)}</h1><p>${esc(L('يُولَّد تلقائياً من الحضور والإجازات المعتمدة والعطل.', 'Generated automatically from attendance, approved leave and holidays.'))} ${rule('TS-001')}</p></div><span class="badge ${st[0]}">${esc(st[1])}</span></div>
       <div class="grid g-21">
@@ -575,9 +585,9 @@
           <dl class="kv"><dt>${esc(L('أيام العمل', 'Work days'))}</dt><dd class="num">${work}</dd><dt>${esc(L('أيام الإجازة', 'Leave days'))}</dt><dd class="num">${lv}</dd><dt>${esc(L('العطل الرسمية', 'Public holidays'))}</dt><dd class="num">${hd}</dd><dt>${esc(L('الساعات', 'Hours'))}</dt><dd class="num">${fmtN(work * D.POLICY.workWeek.hoursPerDay)}</dd><dt>${esc(L('علامات التأخير', 'Late marks'))}</dt><dd class="num">${e.lateMarks} / ${D.POLICY.lateMarksThreshold} ${rule('WT-013')}</dd></dl>
         </section>
       </div>
-      <section class="card"><div class="card-head"><h2>${esc(L('توزيع الوقت على المنح', 'Time allocation by grant'))} ${rule('TS-002')}</h2><span class="subtle">${esc(L('المجموع يجب أن يساوي 100%', 'Total must equal 100%'))}</span></div>
-        <div class="table-wrap"><table><thead><tr><th>${esc(L('المنحة', 'Grant'))}</th><th>${esc(L('المانح', 'Donor'))}</th><th>${esc(L('النسبة %', 'Percent %'))}</th><th>${esc(L('الساعات', 'Hours'))}</th></tr></thead><tbody>
-          ${grants.map((g) => { const a = ts.alloc.find((x) => x.grant === g.id); const pct = a ? a.pct : 0; return `<tr><td><b>${esc(g.id)}</b> · ${esc(T(g))}</td><td>${esc(T(g.donor))}</td><td><input type="number" min="0" max="100" step="5" class="input num" style="width:96px" data-ts-grant="${g.id}" value="${pct}" ${locked ? 'disabled' : ''} aria-label="${esc(g.id)}"></td><td class="num">${fmtN((work * D.POLICY.workWeek.hoursPerDay * pct) / 100, 1)}</td></tr>`; }).join('')}
+      <section class="card"><div class="card-head"><h2>${esc(L('توزيع الوقت على مراكز التكلفة', 'Time allocation by cost centre'))} ${rule('TS-002')}</h2><span class="subtle">${esc(L('المجموع يجب أن يساوي 100%', 'Total must equal 100%'))}</span></div>
+        <div class="table-wrap"><table><thead><tr><th>${esc(L('مركز التكلفة', 'Cost centre'))}</th><th>${esc(L('النوع', 'Type'))}</th><th>${esc(L('النسبة %', 'Percent %'))}</th><th>${esc(L('الساعات', 'Hours'))}</th></tr></thead><tbody>
+          ${grants.map((g) => { const a = ts.alloc.find((x) => x.grant === g.id); const pct = a ? a.pct : 0; return `<tr><td><b>${esc(g.id)}</b> · ${esc(T(g))}</td><td>${esc(T(g.kind))}</td><td><input type="number" min="0" max="100" step="5" class="input num" style="width:96px" data-ts-grant="${g.id}" value="${pct}" ${locked ? 'disabled' : ''} aria-label="${esc(g.id)}"></td><td class="num">${fmtN((work * D.POLICY.workWeek.hoursPerDay * pct) / 100, 1)}</td></tr>`; }).join('')}
           <tr><td colspan="2"><b>${esc(L('المجموع', 'Total'))}</b></td><td class="num"><b id="ts-total">${total}%</b></td><td></td></tr>
         </tbody></table></div>
         <div style="margin-top:12px" class="msgs" id="ts-msg">${ok ? `<div class="msg ok">${icon('check', 16)}<div>${esc(L('التوزيع صحيح.', 'Allocation is valid.'))}</div></div>` : `<div class="msg bad">${icon('warn', 16)}<div>${esc(L(`المجموع ${total}%، ويجب أن يساوي 100% قبل التسليم.`, `Total is ${total}%; it must equal 100% before submitting.`))} ${rule('TS-002')}</div></div>`}
@@ -604,10 +614,10 @@
         <section class="card"><h2>${esc(L('الفترات', 'Periods'))}</h2><div class="list">${months.map((d, i) => `<div class="list-item">${icon('doc')}<div class="grow"><div class="t">${esc(mName(d))}</div><div class="subtle">${esc(L('تحويل بنكي', 'Bank transfer'))}</div></div>${i === 0 ? badge('b-brand', L('معروضة', 'Shown')) : ''}</div>`).join('')}</div></section>
         <section class="card"><div class="card-head"><h2>${esc(mName(sel))}</h2>${badge('b-neutral', L('نموذج توضيحي', 'Illustrative'))}</div>
           <div class="table-wrap"><table><tbody>
-            <tr><td>${esc(L('الراتب الأساسي', 'Base salary'))}</td><td class="num" style="text-align:end">${money(e.baseSalary)}</td></tr>
-            <tr><td>${esc(L('أيام بدون راتب', 'Unpaid days'))} ${rule('WT-014')}</td><td class="num" style="text-align:end">− ${money(unpaid * daily)}</td></tr>
-            <tr><td>${esc(L('ضريبة الدخل (مثال توضيحي؛ تُحسب في نظام الرواتب)', 'Income tax (illustrative; calculated by the payroll system)'))}</td><td class="num" style="text-align:end">− ${money(tax)}</td></tr>
-            <tr><td><b>${esc(L('صافي الراتب', 'Net pay'))}</b></td><td class="num" style="text-align:end"><b>${money(net)}</b></td></tr>
+            <tr><td>${esc(L('الراتب الأساسي', 'Base salary'))}</td><td class="num" style="text-align:end">${money(e.baseSalary, e.currency)}</td></tr>
+            <tr><td>${esc(L('أيام بدون راتب', 'Unpaid days'))} ${rule('WT-014')}</td><td class="num" style="text-align:end">− ${money(unpaid * daily, e.currency)}</td></tr>
+            <tr><td>${esc(L('ضريبة الدخل (مثال توضيحي؛ تُحسب في نظام الرواتب)', 'Income tax (illustrative; calculated by the payroll system)'))}</td><td class="num" style="text-align:end">− ${money(tax, e.currency)}</td></tr>
+            <tr><td><b>${esc(L('صافي الراتب', 'Net pay'))}</b></td><td class="num" style="text-align:end"><b>${money(net, e.currency)}</b></td></tr>
           </tbody></table></div>
           <div class="msg info" style="margin-top:12px">${icon('info', 16)}<div>${esc(L('لديك 5 أيام عمل للاستفسار عن القسيمة، و7 أيام للاعتراض على أي خصم.', 'You have 5 working days to query a payslip and 7 days to dispute a deduction.'))} ${rule('CP-006')} ${rule('CP-007')}</div></div>
           <div class="btn-row" style="margin-top:12px"><button class="btn" data-act="toast" data-msg="${esc(L('تم إرسال استفسارك إلى الموارد البشرية والمالية.', 'Your query was sent to HR and Finance.'))}">${esc(L('استفسار عن القسيمة', 'Query this payslip'))}</button></div>
@@ -620,7 +630,7 @@
     return `
       <div class="page-head"><div><h1>${esc(L('السياسات والإقرارات', 'Policies & acknowledgements'))}</h1><p>${esc(L('يُطلب الإقرار من جديد عند صدور إصدار جديد من أي سياسة.', 'You are asked again whenever a policy has a new version.'))} ${rule('ON-004')}</p></div></div>
       <section class="card"><div class="list">${D.POLICIES.map((p) => { const missing = e.ackMissing.includes(p.code); return `<div class="list-item">${icon('doc')}<div class="grow"><div class="t">${esc(T(p))}</div><div class="subtle">${esc(L(`الإصدار ${p.v}`, `Version ${p.v}`))}</div></div>${missing ? `${badge('b-warn', L('بانتظار إقرارك', 'Awaiting your acknowledgement'), 'clock')}<button class="btn primary sm" data-act="ack-open" data-id="${p.code}">${esc(L('قراءة وإقرار', 'Read & acknowledge'))}</button>` : badge('b-ok', L('تم الإقرار', 'Acknowledged'), 'check')}</div>`; }).join('')}</div></section>
-      <section class="card"><h2>${icon('shield')} ${esc(L('قناة البلاغات المستقلة', 'Independent reporting channel'))}</h2><p class="muted" style="margin:0">${esc(L('للإبلاغ عن التحرش أو الاحتيال أو الاستغلال بسرية تامة، ويمكن الإبلاغ دون ذكر الاسم. لا يستقبل هذا النظام البلاغات حمايةً لسريتها.', 'Report harassment, fraud or exploitation confidentially, anonymously if you wish. This system does not collect reports, to protect their confidentiality.'))} ${rule('CC-002')}</p><div class="btn-row" style="margin-top:12px"><button class="btn" data-act="toast" data-msg="${esc(L('في النسخة الفعلية يفتح هذا رابط قناة البلاغات الخاصة بمؤسستك.', 'In production this opens your organization\'s reporting channel.'))}">${esc(L('فتح قناة البلاغات', 'Open reporting channel'))}</button></div></section>`;
+      <section class="card"><h2>${icon('shield')} ${esc(L('قناة البلاغات المستقلة', 'Independent reporting channel'))}</h2><p class="muted" style="margin:0">${esc(L('للإبلاغ عن التحرش أو الاحتيال أو الاستغلال بسرية تامة، ويمكن الإبلاغ دون ذكر الاسم. لا يستقبل هذا النظام البلاغات حمايةً لسريتها.', 'Report harassment, fraud or exploitation confidentially, anonymously if you wish. This system does not collect reports, to protect their confidentiality.'))} ${rule('CC-002')}</p><div class="btn-row" style="margin-top:12px"><button class="btn" data-act="toast" data-msg="${esc(L('في النسخة الفعلية يفتح هذا رابط قناة البلاغات الخاصة بشركتك.', 'In production this opens your company\'s reporting channel.'))}">${esc(L('فتح قناة البلاغات', 'Open reporting channel'))}</button></div></section>`;
   }
 
   function vEmpProfile() {
@@ -675,7 +685,7 @@
     const turnDept = byDept.map((x) => { const n = seps.filter((q) => q.dept === x.id && q.date > from).length; return { label: x.label, value: x.value ? (n / x.value) * (12 / f.months) * 100 : 0, tip: L(`${n} حالة انفصال`, `${n} separations`) }; }).sort((a, b) => b.value - a.value);
     const women = emps.filter((e) => e.gender === 'F').length;
     const tenure = emps.length ? emps.reduce((t, e) => t + daysBetween(e.hireDate, today), 0) / emps.length / 365.25 : 0;
-    const salary = emps.length ? emps.reduce((t, e) => t + e.baseSalary, 0) / emps.length : 0;
+    const salary = emps.length ? emps.reduce((t, e) => t + toBase(e), 0) / emps.length : 0;
     // Pulse-survey score: demo figure, stable for a given filter.
     const seed = [...`${f.office}|${f.dept}`].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7);
     const sat = 3.9 + (seed % 7) / 10; const satDelta = [0.2, 0.1, 0.3, -0.1, 0.2][seed % 5];
@@ -722,7 +732,7 @@
   function dashFilters() {
     const f = S.dash; const names = {}; D.employees.forEach((e) => { names[e.dept] = e.deptName; });
     return `<div class="dash-filters">
-        <select class="select" data-dash="office" aria-label="${esc(L('المكتب', 'Office'))}"><option value="">${esc(L('كل المكاتب', 'All offices'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}" ${f.office === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
+        <select class="select" data-dash="office" aria-label="${esc(L('الفرع', 'Branch'))}"><option value="">${esc(L('كل الفروع', 'All branches'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}" ${f.office === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
         <select class="select" data-dash="dept" aria-label="${esc(L('القسم', 'Department'))}"><option value="">${esc(L('كل الأقسام', 'All departments'))}</option>${Object.keys(names).map((k) => `<option value="${k}" ${f.dept === k ? 'selected' : ''}>${esc(T(names[k]))}</option>`).join('')}</select>
         <div class="seg" role="group" aria-label="${esc(L('الفترة', 'Period'))}">${[6, 12].map((m) => `<button data-act="dash-months" data-v="${m}" aria-pressed="${f.months === m}">${esc(L(`${m} شهرا`, `${m} months`))}</button>`).join('')}</div>
         ${f.office || f.dept ? `<button class="btn subtle sm" data-act="dash-reset">${icon('reset', 14)}${esc(L('إزالة التصفية', 'Clear filters'))}</button>` : ''}</div>`;
@@ -732,12 +742,12 @@
     const period = L(`آخر ${f.months} شهرا`, `last ${f.months} months`);
     const pct = (v) => `${fmtN(v, 1)}%`;
     const filters = dashFilters();
-    if (!a.now) return `${filters}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر المكتب أو القسم.', 'Change the office or the department.'))}</section>`;
+    if (!a.now) return `${filters}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر الفرع أو القسم.', 'Change the branch or the department.'))}</section>`;
     return `${filters}
       <div class="kgrid">
         ${kpiCard('t-blue', 'people', L('إجمالي الموظفين', 'Total staff'), fmtN(a.now), delta(a.growth, '%', true, period))}
         ${kpiCard('t-red', 'reset', L('معدل الدوران السنوي', 'Annual turnover rate'), pct(a.turnover), a.turnoverPrev == null ? delta(null, '', false, L(`${a.sepCount} حالة انفصال`, `${a.sepCount} separations`)) : delta(a.turnover - a.turnoverPrev, L(' نقطة', ' pts'), false, L('عن الفترة السابقة', 'vs previous period')))}
-        ${kpiCard('t-teal', 'money', L('متوسط الراتب الأساسي', 'Average base salary'), `${fmtN(Math.round(a.salary))}<small> ${esc(L('دولار', 'USD'))}</small>`, delta(null, '', true, L('شهريا', 'per month')))}
+        ${kpiCard('t-teal', 'money', L('متوسط الراتب الأساسي', 'Average base salary'), `${fmtN(Math.round(a.salary))}<small> ${esc(curLabel())}</small>`, delta(null, '', true, L('شهريا', 'per month')))}
         ${kpiCard('t-amber', 'chat', L('رضا الموظفين', 'Staff satisfaction'), `${fmtN(a.sat, 1)}<small> / 5</small>`, delta(a.satDelta, '', true, L('عن الاستبيان السابق', 'vs last survey')))}
         ${kpiCard('t-blue', 'clock', L('متوسط مدة الخدمة', 'Average tenure'), `${fmtN(a.tenure, 1)}<small> ${esc(L('سنة', 'years'))}</small>`, delta(null, '', true, L('لكل الموظفين الحاليين', 'across current staff')))}
       </div>
@@ -780,7 +790,7 @@
         <section class="card"><h2>${esc(L('عقود تنتهي خلال 30 يوماً', 'Contracts ending in 30 days'))} <span class="count">${ce.length}</span></h2>${empMiniTable(ce.slice(0, 8), (e) => fmtD(e.contractEnd), (e) => `<button class="btn sm" data-act="cos-new" data-id="${e.id}" data-type="RENEWAL">${esc(L('تجديد', 'Renew'))}</button>`)}</section>
       </div>
       <div class="grid g-2">
-        <section class="card"><h2>${esc(L('الموظفون حسب المكتب', 'Staff by office'))}</h2>${bars(byOffice, { title: L('الموظفون حسب المكتب', 'Staff by office') })}</section>
+        <section class="card"><h2>${esc(L('الموظفون حسب الفرع', 'Staff by branch'))}</h2>${bars(byOffice, { title: L('الموظفون حسب الفرع', 'Staff by branch') })}</section>
         <section class="card"><h2>${esc(L('الموظفون حسب فئة التوظيف', 'Staff by employment category'))}</h2>${bars(byCat, { title: L('حسب الفئة', 'By category') })}</section>
       </div>
       <div class="grid g-2">
@@ -829,7 +839,7 @@
     const nums = []; const lo = Math.max(1, Math.min(f.page - 2, pages - 4)); for (let i = lo; i <= Math.min(pages, lo + 4); i++) nums.push(i);
     return `${bulk}<div class="table-wrap"><table><thead><tr>
         <th class="cb"><input type="checkbox" class="cbx" data-act="sel-page" ${allSel ? 'checked' : ''} ${!allSel && someSel ? 'data-indeterminate="1"' : ''} aria-label="${esc(L('تحديد الصفحة', 'Select page'))}"></th>
-        ${th('name', 'الموظف', 'Employee')}${th('position', 'الوظيفة', 'Position')}${th('dept', 'القسم', 'Department', 'hide-sm')}${th('office', 'المكتب', 'Office', 'hide-sm')}${th('cat', 'الفئة', 'Category')}${th('hire', 'تاريخ التعيين', 'Hire date', 'hide-sm')}<th>${esc(L('تنبيهات', 'Flags'))}</th><th class="actions"><span class="sr-only">${esc(L('إجراءات', 'Actions'))}</span></th></tr></thead><tbody>
+        ${th('name', 'الموظف', 'Employee')}${th('position', 'الوظيفة', 'Position')}${th('dept', 'القسم', 'Department', 'hide-sm')}${th('office', 'الفرع', 'Branch', 'hide-sm')}${th('cat', 'الفئة', 'Category')}${th('hire', 'تاريخ التعيين', 'Hire date', 'hide-sm')}<th>${esc(L('تنبيهات', 'Flags'))}</th><th class="actions"><span class="sr-only">${esc(L('إجراءات', 'Actions'))}</span></th></tr></thead><tbody>
       ${rows.map((e) => { const sel = f.sel.includes(e.id); return `<tr class="clickable ${sel ? 'selected' : ''}" data-act="emp" data-id="${e.id}"><td class="cb"><input type="checkbox" class="cbx" data-act="sel-row" data-id="${e.id}" ${sel ? 'checked' : ''} aria-label="${esc(T(e.name))}"></td><td>${who(e, e.staffNo)}</td><td>${esc(T(e.position))}</td><td class="hide-sm">${esc(T(e.deptName))}</td><td class="hide-sm">${esc(officeName(e.office))}</td><td>${badge('b-neutral', T(CAT[e.category]))}</td><td class="hide-sm num">${esc(fmtD(e.hireDate))}</td><td>${flags(e)}</td><td class="actions"><button class="iconbtn sm" data-act="row-menu" data-id="${e.id}" aria-haspopup="menu" aria-label="${esc(L('مزيد من الإجراءات', 'More actions'))}">${icon('more', 16)}</button></td></tr>`; }).join('')}
     </tbody></table></div>
     <div class="pager"><div class="pager-l"><label>${esc(L('صفوف لكل صفحة', 'Rows per page'))} <select class="select sm" data-dir="per">${[10, 20, 50].map((n) => `<option ${n === per ? 'selected' : ''}>${n}</option>`).join('')}</select></label><span class="num">${fmtN(start + 1)}–${fmtN(Math.min(start + per, list.length))} ${esc(L('من', 'of'))} ${fmtN(list.length)}</span></div>
@@ -848,7 +858,7 @@
           <div class="seg" role="group" aria-label="${esc(L('عرض', 'View'))}">${chips.map(([k, ar, en]) => `<button aria-pressed="${f.flag === k}" data-act="nav-sub" data-v="employees" data-k="${k}">${esc(L(ar, en))}</button>`).join('')}</div>
           <div class="toolbar">
             <label class="search-inline">${icon('search', 14)}<input type="search" class="input" placeholder="${esc(L('بحث بالاسم أو الرقم أو الوظيفة', 'Search name, number, position'))}" value="${esc(f.q)}" data-dir="q" aria-label="${esc(L('بحث', 'Search'))}"></label>
-            <select class="select" data-dir="office" aria-label="${esc(L('المكتب', 'Office'))}"><option value="">${esc(L('كل المكاتب', 'All offices'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}" ${f.office === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
+            <select class="select" data-dir="office" aria-label="${esc(L('الفرع', 'Branch'))}"><option value="">${esc(L('كل الفروع', 'All branches'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}" ${f.office === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
             <select class="select" data-dir="dept" aria-label="${esc(L('القسم', 'Department'))}"><option value="">${esc(L('كل الأقسام', 'All departments'))}</option>${D.DEPTS.map((o) => `<option value="${o.id}" ${f.dept === o.id ? 'selected' : ''}>${esc(T(o))}</option>`).join('')}</select>
             <select class="select" data-dir="cat" aria-label="${esc(L('الفئة', 'Category'))}"><option value="">${esc(L('كل الفئات', 'All categories'))}</option>${Object.keys(CAT).map((c) => `<option value="${c}" ${f.cat === c ? 'selected' : ''}>${esc(T(CAT[c]))}</option>`).join('')}</select>
           </div>
@@ -868,7 +878,7 @@
       return `<tr class="${sel ? 'selected' : ''}"><td class="cb"><input type="checkbox" class="cbx" data-act="hr-sel" data-id="${r.id}" ${sel ? 'checked' : ''} aria-label="${esc(r.id)}"></td><td class="num">${esc(r.id)}</td><td>${who(e, T(e.position))}</td><td>${esc(T(LEAVE[r.type]))}</td><td class="hide-sm">${esc(fmtD(r.from))} – ${esc(fmtD(r.to))}</td><td class="num">${fmtN(r.days)}</td><td>${v.errors.length ? badge('b-bad', L(`${v.errors.length} مخالفة`, `${v.errors.length} issue(s)`), 'warn') : badge('b-ok', L('مطابق', 'Compliant'), 'check')}</td><td style="text-align:end"><div class="btn-row" style="justify-content:flex-end;flex-wrap:nowrap"><button class="btn primary sm" data-act="hr-approve" data-id="${r.id}">${esc(L('اعتماد', 'Approve'))}</button><button class="btn sm danger" data-act="hr-reject" data-id="${r.id}">${esc(L('رفض', 'Reject'))}</button></div></td></tr>`;
     }).join('');
     return `
-      <div class="page-head"><div><h1>${esc(L('طلبات الإجازة', 'Leave requests'))}</h1><p>${esc(L('المسار: المدير المباشر ← الموارد البشرية (والمدير القُطري للإجازة بدون راتب).', 'Route: line manager → HR (and Country Director for leave without pay).'))} ${rule('LV-001')} ${rule('LV-063')}</p></div></div>
+      <div class="page-head"><div><h1>${esc(L('طلبات الإجازة', 'Leave requests'))}</h1><p>${esc(L('المسار: المدير المباشر ← الموارد البشرية (والمدير العام للإجازة بدون راتب).', 'Route: line manager → HR (and General Manager for leave without pay).'))} ${rule('LV-001')} ${rule('LV-063')}</p></div></div>
       <section class="card flush">
         <div class="table-toolbar"><h2 style="margin:0;font-size:var(--fs-section)">${esc(L('بانتظار اعتمادك', 'Awaiting your approval'))} <span class="subtle">${q.length}</span></h2></div>
         ${S.hrSel.length ? `<div class="bulkbar"><span><b class="num">${S.hrSel.length}</b> ${esc(L('محدد', 'selected'))}</span><button class="btn sm primary" data-act="hr-bulk-approve">${icon('check', 14)}${esc(L('اعتماد المحدد', 'Approve selected'))}</button><button class="btn sm subtle" data-act="hr-sel-clear">${esc(L('إلغاء التحديد', 'Clear'))}</button></div>` : ''}
@@ -885,7 +895,7 @@
     if (c.stage === 'INTERVIEW' && c.score == null) return R('RC-008', 'يجب تسجيل نتيجة المقابلة.', 'Interview score must be recorded.');
     if (c.stage === 'EVALUATION' && c.evals.submitted < c.evals.required) return R('RC-008', `نماذج التقييم ${c.evals.submitted}/${c.evals.required}: كل عضو في اللجنة يجب أن يقدّم نموذجه.`, `Evaluations ${c.evals.submitted}/${c.evals.required}: every panel member must submit a form.`);
     if (c.stage === 'SCREENING' && c.refs < 2) return R('RC-014', `المراجع ${c.refs}/2.`, `References ${c.refs}/2.`);
-    if (c.stage === 'SCREENING' && c.mds === false) return R('RC-020', 'فحص الإفصاح عن سوء السلوك (MDS) لدى جهات العمل السابقة لم يكتمل.', 'Misconduct disclosure check (MDS) with previous employers is not complete.');
+    if (c.stage === 'SCREENING' && c.mds === false) return R('RC-020', 'صحيفة الحالة الجنائية والتصريح الأمني لدخول الموانئ لم يكتملا.', 'Criminal record certificate and port security pass are not complete.');
     if (c.stage === 'SCREENING' && c.screening !== 'CLEARED') return R('RC-015', 'لا يصدر عرض قبل اجتياز فحص الامتثال.', 'No offer before compliance screening is cleared.');
     if (!next) return null;
     return null;
@@ -899,13 +909,13 @@
       return `<div class="cand"><div class="t">${esc(T(c.name))}</div>
         <div class="row">${c.score != null ? badge('b-brand', L(`النتيجة ${c.score}`, `Score ${c.score}`)) : ''}${c.internal ? badge('b-info', L('داخلي', 'Internal')) : ''}<span class="subtle">${esc(L(`${c.years} سنوات خبرة`, `${c.years} yrs exp.`))}</span></div>
         ${['EVALUATION', 'SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row subtle">${esc(L(`التقييمات ${c.evals.submitted}/${c.evals.required} · المراجع ${c.refs}/2`, `Evals ${c.evals.submitted}/${c.evals.required} · refs ${c.refs}/2`))}</div>` : ''}
-        ${['SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row"><span class="subtle">${esc(L('سوء السلوك (MDS):', 'Misconduct check (MDS):'))}</span>${c.mds === false ? badge('b-warn', L('قيد الطلب', 'Requested')) : badge('b-ok', L('لا يوجد', 'Clear'))}</div>` : ''}
+        ${['SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row"><span class="subtle">${esc(L('الحالة الجنائية وتصريح الميناء:', 'Criminal record & port pass:'))}</span>${c.mds === false ? badge('b-warn', L('قيد الطلب', 'Requested')) : badge('b-ok', L('لا يوجد', 'Clear'))}</div>` : ''}
         ${['SCREENING', 'OFFER'].includes(c.stage) ? `<div class="row"><span class="subtle">${esc(L('فحص الامتثال:', 'Screening:'))}</span>${badge(scr[c.screening][0], scr[c.screening][1])}</div>` : ''}
         ${g ? `<div class="msg warn" style="padding:6px 8px">${icon('lock', 14)}<div>${esc(T(g))} ${rule(g.rule)}</div></div>` : ''}
         <div class="row">
           ${c.stage === 'SCREENING' && c.screening === 'PENDING' ? `<button class="btn sm" data-act="screen" data-id="${c.id}">${esc(L('تسجيل نتيجة الفحص', 'Record screening result'))}</button>` : ''}
           ${c.stage === 'EVALUATION' && c.evals.submitted < c.evals.required ? `<button class="btn sm" data-act="remind-panel" data-id="${c.id}">${icon('teams', 14)}${esc(L('تذكير اللجنة', 'Remind panel'))}</button>` : ''}
-          ${!isLast ? `<button class="btn sm primary" data-act="advance" data-id="${c.id}" ${g ? 'disabled' : ''}>${esc(L('نقل للمرحلة التالية', 'Move forward'))}</button>` : `<button class="btn sm primary" data-act="to-cd" data-id="${c.id}" ${c.sentToCd ? 'disabled' : ''}>${icon('send', 14)}${esc(c.sentToCd ? L('أُرسل للاعتماد', 'Sent for approval') : L('إرسال للمدير القُطري', 'Send to Country Director'))}</button>`}
+          ${!isLast ? `<button class="btn sm primary" data-act="advance" data-id="${c.id}" ${g ? 'disabled' : ''}>${esc(L('نقل للمرحلة التالية', 'Move forward'))}</button>` : `<button class="btn sm primary" data-act="to-cd" data-id="${c.id}" ${c.sentToCd ? 'disabled' : ''}>${icon('send', 14)}${esc(c.sentToCd ? L('أُرسل للاعتماد', 'Sent for approval') : L('إرسال للمدير العام', 'Send to General Manager'))}</button>`}
         </div></div>`;
     };
     return `
@@ -935,7 +945,7 @@
         <section class="card"><div class="card-head"><h2>${esc(L('التدريبات الإلزامية', 'Mandatory trainings'))} ${rule('CC-009')}</h2>${readOnly ? '' : `<button class="btn sm" data-act="toast" data-msg="${esc(L('سُجّل الموظفون الناقصون في الدورة القادمة.', 'Pending staff enrolled in the next session.'))}">${esc(L('تسجيل في الدورة القادمة', 'Enrol in next session'))}</button>`}</div>
           <div class="list">${tr.map((x) => `<div class="list-item"><div class="grow"><div class="t">${esc(T(x.t))}</div>${meter(x.pct, cls(x.pct))}<div class="subtle">${esc(L(`${fmtN(x.pct, 1)}% · ${x.miss} لم يُكملوا`, `${fmtN(x.pct, 1)}% · ${x.miss} not completed`))}</div></div>${st(x.pct)}</div>`).join('')}</div></section>
       </div>
-      <section class="card"><h2>${icon('lock')} ${esc(L('ملاحظة أمنية', 'Security note'))}</h2><p class="muted" style="margin:0">${esc(L('نتائج الفحص التفصيلية لا يراها إلا مسؤول الامتثال ومدير الموارد البشرية والمدير القُطري، وبقية المستخدمين يرون الحالة فقط.', 'Detailed screening results are visible only to the compliance officer, HR manager and Country Director; others see the status only.'))} ${rule('RC-016')}</p></section>`;
+      <section class="card"><h2>${icon('lock')} ${esc(L('ملاحظة أمنية', 'Security note'))}</h2><p class="muted" style="margin:0">${esc(L('نتائج الفحص التفصيلية لا يراها إلا مسؤول الامتثال ومدير الموارد البشرية والمدير العام، وبقية المستخدمين يرون الحالة فقط.', 'Detailed screening results are visible only to the compliance officer, HR manager and General Manager; others see the status only.'))} ${rule('RC-016')}</p></section>`;
   }
   function vHrCompliance() {
     return `<div class="page-head"><div><h1>${esc(L('الامتثال', 'Compliance'))}</h1><p>${esc(L('الإقرارات والتدريبات الإلزامية وفحص الأطراف المحظورة.', 'Acknowledgements, mandatory trainings and prohibited-party screening.'))}</p></div></div>${complianceBody(false)}`;
@@ -953,8 +963,10 @@
     { k: 'overtimeMultiplier', rule: 'WT-021', ar: 'معامل أجر العمل الإضافي', en: 'Overtime rate multiplier', type: 'number', min: 1, max: 3, step: 0.25 },
     { k: 'meritMaxPercent', rule: 'CP-010', ar: 'الحد الأقصى للزيادة السنوية %', en: 'Merit increase maximum %', type: 'number', min: 0, max: 20 }
   ];
-  const getP = (k) => k.split('.').reduce((o, p) => o[p], D.POLICY);
-  const setP = (k, v) => { const ps = k.split('.'); const last = ps.pop(); ps.reduce((o, p) => o[p], D.POLICY)[last] = v; };
+  S.policySet = S.policySet || 'EG';
+  const PSET = () => D.POLICY_SETS[S.policySet] || D.POLICY;
+  const getP = (k) => k.split('.').reduce((o, p) => o[p], PSET());
+  const setP = (k, v) => { const ps = k.split('.'); const last = ps.pop(); ps.reduce((o, p) => o[p], PSET())[last] = v; };
   const TOGGLES = [
     { k: 'flags.sickInProbation', rule: 'LV-025', ar: 'السماح بالإجازة المرضية المدفوعة خلال فترة التجربة', en: 'Allow paid sick leave during probation' },
     { k: 'flags.overtimePreApproval', rule: 'WT-020', ar: 'العمل الإضافي يتطلب موافقة مسبقة', en: 'Overtime requires prior approval' },
@@ -962,18 +974,19 @@
     { k: 'flags.deemedResignationAuto', rule: 'WT-015', ar: 'اعتبار الغياب المتتالي استقالة تلقائياً (غير مستحسن)', en: 'Treat consecutive absence as resignation automatically (not recommended)' }
   ];
   function vHrSettings() {
-    const changedP = (k) => JSON.stringify(getP(k)) !== JSON.stringify(k.split('.').reduce((o, x) => (o ? o[x] : undefined), DEFAULT_POLICY));
+    const changedP = (k) => JSON.stringify(getP(k)) !== JSON.stringify(k.split('.').reduce((o, x) => (o ? o[x] : undefined), DEFAULT_SETS[S.policySet]));
     const sw = (t) => `<label class="switch"><input type="checkbox" role="switch" data-toggle="${t.k}" ${getP(t.k) ? 'checked' : ''} aria-label="${esc(L(t.ar, t.en))}"><span class="track"><span class="thumb"></span></span></label>`;
     return `
       <div class="page-head"><div><h1>${esc(L('إعدادات السياسات', 'Policy settings'))}</h1><p>${esc(L('كل رقم في السياسات إعداد قابل للتعديل دون برمجة، ويُطبَّق فوراً. جرّب تعديل قيمة ثم قدّم إجازة من مساحة الموظف.', 'Every policy number is a setting, editable without code and applied immediately. Change a value, then request leave from the Employee workspace.'))}</p></div>
         <div class="btn-row"><button class="btn subtle" data-act="reset-policy">${icon('reset', 16)}${esc(L('استعادة الافتراضي', 'Restore defaults'))}</button><button class="btn" data-act="export-policy">${icon('download', 16)}${esc(L('تصدير JSON', 'Export JSON'))}</button></div></div>
       <div class="grid g-21">
         <div class="grid">
-          <section class="card"><div class="card-head"><h2>${esc(L('مجموعة السياسات القُطرية: نموذجية', 'Country policy set: Sample'))}</h2>
+          <section class="card"><div class="card-head"><h2>${esc(L('مجموعة السياسات', 'Policy set'))}</h2>
+            <div class="seg" role="group" aria-label="${esc(L('الدولة', 'Country'))}">${D.COUNTRIES.map((c) => `<button aria-pressed="${S.policySet === c.id}" data-act="policy-set" data-id="${c.id}">${esc(T(c))} · ${esc(curLabel(c.currency))}</button>`).join('')}</div>
             <div class="field" style="grid-template-columns:auto 160px;align-items:center;gap:8px"><label for="eff">${esc(L('سارية من', 'Effective from'))}</label><input id="eff" type="date" class="input" value="${esc(S.effDate)}" data-eff="1"></div></div>
             ${PARAMS.map((p) => { const val = getP(p.k); return `<div class="param"><div class="pl"><b>${esc(L(p.ar, p.en))} ${changedP(p.k) ? badge('b-brand', L('معدّل', 'Changed')) : ''}</b><span class="subtle">${rule(p.rule)} <bdi style="direction:ltr">${esc(p.k)}</bdi></span></div>
               ${p.type === 'radio' ? `<div class="radio-group" role="radiogroup" aria-label="${esc(L(p.ar, p.en))}">${p.opts.map((o) => `<label class="radio"><input type="radio" name="${p.k}" value="${o[0]}" data-param="${p.k}" ${val === o[0] ? 'checked' : ''}><span>${esc(L(o[1], o[2]))}</span></label>`).join('')}</div>` : `<input class="input num" type="number" min="${p.min}" max="${p.max}" step="${p.step || 1}" value="${val}" data-param="${p.k}" aria-label="${esc(L(p.ar, p.en))}">`}</div>`; }).join('')}
-            <div class="param wide"><div class="pl"><b>${esc(L('أيام العمل الأسبوعية', 'Working days of the week'))}</b><span class="subtle">${rule('WT-001')}</span></div><div class="days-pick">${DAYNAMES.map((dn) => `<label><input type="checkbox" data-wday="${dn}" ${D.POLICY.workWeek.days.includes(dn) ? 'checked' : ''}>${esc(T(DAYLABEL[dn]))}</label>`).join('')}</div></div>
+            <div class="param wide"><div class="pl"><b>${esc(L('أيام العمل الأسبوعية', 'Working days of the week'))}</b><span class="subtle">${rule('WT-001')}</span></div><div class="days-pick">${DAYNAMES.map((dn) => `<label><input type="checkbox" data-wday="${dn}" ${PSET().workWeek.days.includes(dn) ? 'checked' : ''}>${esc(T(DAYLABEL[dn]))}</label>`).join('')}</div></div>
           </section>
           <section class="card"><h2>${esc(L('قواعد التشغيل', 'Operating rules'))}</h2>
             ${TOGGLES.map((t) => `<div class="param wide"><div class="pl"><b>${esc(L(t.ar, t.en))} ${changedP(t.k) ? badge('b-brand', L('معدّل', 'Changed')) : ''}</b><span class="subtle">${rule(t.rule)}</span></div>${sw(t)}</div>`).join('')}
@@ -982,7 +995,7 @@
         <section class="card" style="align-self:start"><h2>${esc(L('كيف يعمل', 'How it works'))}</h2>
           <div class="list">
             <div class="list-item">${icon('cal')}<div class="grow"><div class="t">${esc(L('مؤرخة السريان', 'Effective-dated'))}</div><div class="subtle">${esc(L('لكل قيمة تاريخ بداية ونهاية، فتبقى الحسابات السابقة صحيحة.', 'Each value has a start and end date, so past calculations stay correct.'))}</div></div></div>
-            <div class="list-item">${icon('globe')}<div class="grow"><div class="t">${esc(L('لكل دولة', 'Per country'))}</div><div class="subtle">${esc(L('كل مكتب قُطري يتبع مجموعة سياسات حسب قانون العمل المحلي.', 'Each country office follows its own policy set per local labor law.'))}</div></div></div>
+            <div class="list-item">${icon('globe')}<div class="grow"><div class="t">${esc(L('لكل دولة', 'Per country'))}</div><div class="subtle">${esc(L('لكل دولة تعمل فيها الشركة مجموعة سياسات وعملة حسب قانون العمل المحلي: مصر والإمارات.', 'Each country of operation has its own policy set and currency under local labour law: Egypt and the UAE.'))}</div></div></div>
             <div class="list-item">${icon('doc')}<div class="grow"><div class="t">${esc(L('قابلة للتتبع', 'Traceable'))}</div><div class="subtle">${esc(L('كل إعداد مرتبط بمعرّف قاعدة في المرجع الوظيفي، وكل تعديل يُسجَّل في سجل التدقيق.', 'Every setting maps to a rule ID in the functional reference, and every change is audited.'))}</div></div></div>
           </div>
         </section>
@@ -994,42 +1007,42 @@
   // ======================================================================
   function costByGrant() {
     const m = {}; D.GRANTS.forEach((g) => { m[g.id] = { cost: 0, staff: 0 }; });
-    active().forEach((e) => e.alloc.forEach((a) => { m[a.grant].cost += (e.baseSalary * a.pct) / 100; m[a.grant].staff += a.pct / 100; }));
+    active().forEach((e) => e.alloc.forEach((a) => { m[a.grant].cost += (toBase(e) * a.pct) / 100; m[a.grant].staff += a.pct / 100; }));
     return m;
   }
   function vCdDash() {
     const a = hrAnalyticsData(); const f = S.dash; const emps = a.emps;
-    const payroll = emps.reduce((t, e) => t + e.baseSalary, 0);
+    const payroll = emps.reduce((t, e) => t + toBase(e), 0);
     const pendList = D.approvals.filter((x) => x.status === 'PENDING'); const pend = pendList.length;
-    const liability = emps.filter((e) => e.category === 'REGULAR').reduce((t, e) => t + Math.max(0, balances(e).annual.available) * (e.baseSalary / D.POLICY.workingDaysPerMonth), 0);
+    const liability = emps.filter((e) => e.category === 'REGULAR').reduce((t, e) => t + Math.max(0, balances(e).annual.available) * (toBase(e) / policyFor(e).workingDaysPerMonth), 0);
     const cg = {}; D.GRANTS.forEach((g) => { cg[g.id] = { cost: 0, staff: 0 }; });
-    emps.forEach((e) => e.alloc.forEach((x) => { cg[x.grant].cost += (e.baseSalary * x.pct) / 100; cg[x.grant].staff += x.pct / 100; }));
+    emps.forEach((e) => e.alloc.forEach((x) => { cg[x.grant].cost += (toBase(e) * x.pct) / 100; cg[x.grant].staff += x.pct / 100; }));
     const grantBars = D.GRANTS.map((g) => ({ label: `${g.id} · ${T(g)}`, value: cg[g.id].cost, tip: L(`${fmtN(cg[g.id].staff, 1)} موظف (مكافئ دوام كامل)`, `${fmtN(cg[g.id].staff, 1)} FTE`) })).filter((x) => x.value > 0).sort((x, y) => y.value - x.value);
     const risk = D.GRANTS.filter((g) => daysBetween(D.todayISO, g.end) <= 120).map((g) => ({ g, staff: emps.filter((e) => e.alloc.some((x) => x.grant === g.id)), cost: cg[g.id].cost })).filter((r) => r.staff.length);
     const byOffice = D.OFFICES.map((o) => ({ label: T(o), value: emps.filter((e) => e.office === o.id).length })).filter((x) => x.value).sort((x, y) => y.value - x.value);
     const period = L(`آخر ${f.months} شهرا`, `last ${f.months} months`);
     const k = (v) => (v >= 1000 ? `${fmtN(v / 1000, v >= 100000 ? 0 : 1)}${L(' ألف', 'k')}` : fmtN(v));
     const head = `<div class="page-head"><div><h1>${esc(L('اللوحة التنفيذية', 'Executive dashboard'))}</h1><p>${esc(`${T(D.ORG)} · ${fmtD(D.todayISO)}`)}</p></div><button class="btn primary" data-act="nav" data-v="approvals">${icon('approve', 16)}${esc(L(`الموافقات (${pend})`, `Approvals (${pend})`))}</button></div>`;
-    if (!a.now) return `${head}${dashFilters()}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر المكتب أو القسم.', 'Change the office or the department.'))}</section>`;
+    if (!a.now) return `${head}${dashFilters()}<section class="card">${emptyState('people', L('لا موظفين بهذه التصفية', 'No staff match these filters'), L('غيّر الفرع أو القسم.', 'Change the branch or the department.'))}</section>`;
     return `${head}
       ${dashFilters()}
       <div class="kgrid">
         ${kpiCard('t-blue', 'people', L('القوى العاملة', 'Workforce'), fmtN(a.now), delta(a.growth, '%', true, period))}
-        ${kpiCard('t-teal', 'money', L('كلفة الرواتب الشهرية', 'Monthly payroll cost'), `${k(payroll)}<small> ${esc(L('دولار', 'USD'))}</small>`, delta(null, '', true, L('الرواتب الأساسية', 'Base salaries')))}
+        ${kpiCard('t-teal', 'money', L('كلفة الرواتب الشهرية', 'Monthly payroll cost'), `${k(payroll)}<small> ${esc(curLabel())}</small>`, delta(null, '', true, L('الرواتب الأساسية', 'Base salaries')))}
         ${kpiCard('t-red', 'reset', L('معدل الدوران السنوي', 'Annual turnover rate'), `${fmtN(a.turnover, 1)}%`, a.turnoverPrev == null ? delta(null, '', false, L(`${a.sepCount} حالة انفصال`, `${a.sepCount} separations`)) : delta(a.turnover - a.turnoverPrev, L(' نقطة', ' pts'), false, L('عن الفترة السابقة', 'vs previous period')))}
-        ${kpiCard('t-amber', 'cal', L('التزام الإجازات المستحقة', 'Accrued leave liability'), `${k(liability)}<small> ${esc(L('دولار', 'USD'))}</small>`, `<span class="kd flat">${rule('LV-015')}</span>`)}
+        ${kpiCard('t-amber', 'cal', L('التزام الإجازات المستحقة', 'Accrued leave liability'), `${k(liability)}<small> ${esc(curLabel())}</small>`, `<span class="kd flat">${rule('LV-015')}</span>`)}
         ${kpiCard(pend ? 't-amber' : 't-teal', 'approve', L('بانتظار اعتمادك', 'Awaiting your approval'), fmtN(pend), delta(null, '', true, pend ? L('قرارات معلقة', 'decisions pending') : L('لا شيء معلق', 'Nothing pending')))}
       </div>
       <div class="dgrid dg-a">
         <section class="card"><div class="card-head"><h2>${esc(L('بانتظار اعتمادك', 'Awaiting your approval'))} <span class="count">${pend}</span></h2><button class="btn subtle sm" data-act="nav" data-v="approvals">${esc(L('عرض الكل', 'View all'))}</button></div>${apList(pendList.slice(0, 4))}</section>
-        <section class="card"><h2>${icon('warn')} ${esc(L('مخاطر التمويل', 'Funding risk'))}</h2>
-          ${risk.length ? risk.map((r) => `<div class="msg warn" style="margin-bottom:8px">${icon('warn', 16)}<div><b>${esc(r.g.id)} · ${esc(T(r.g))}</b><br>${esc(L(`تنتهي ${fmtD(r.g.end)} · ${r.staff.length} موظفا ممولون منها · ${money(r.cost)} شهريا`, `Ends ${fmtD(r.g.end)} · ${r.staff.length} staff funded · ${money(r.cost)}/month`))}</div></div>`).join('') : `<div class="empty">${esc(L('لا منح تنتهي خلال 120 يوما', 'No grant ends within 120 days'))}</div>`}
-          <p class="subtle" style="margin:0">${esc(L('خطط للتجديد أو النقل أو التقليص قبل انتهاء المنحة.', 'Plan renewal, transfer or redundancy before the grant ends.'))} ${rule('SP-010')}</p></section>
+        <section class="card"><h2>${icon('warn')} ${esc(L('عقود تشغيل تنتهي قريبا', 'Client contracts ending soon'))}</h2>
+          ${risk.length ? risk.map((r) => `<div class="msg warn" style="margin-bottom:8px">${icon('warn', 16)}<div><b>${esc(r.g.id)} · ${esc(T(r.g))}</b><br>${esc(L(`ينتهي ${fmtD(r.g.end)} · ${r.staff.length} موظفا مرتبطون به · ${money(r.cost)} شهريا`, `Ends ${fmtD(r.g.end)} · ${r.staff.length} staff assigned · ${money(r.cost)}/month`))}</div></div>`).join('') : `<div class="empty">${esc(L('لا عقود تنتهي خلال 120 يوما', 'No contract ends within 120 days'))}</div>`}
+          <p class="subtle" style="margin:0">${esc(L('خطط للتجديد أو النقل أو التقليص قبل انتهاء العقد.', 'Plan renewal, transfer or redundancy before the contract ends.'))} ${rule('SP-010')}</p></section>
         <section class="card"><h2>${esc(L('التوزيع حسب الجنس', 'Gender distribution'))}</h2>${donutChart([{ label: L('نساء', 'Women'), value: a.women }, { label: L('رجال', 'Men'), value: a.men }], fmtN(a.now), L('موظف', 'staff'), L('التوزيع حسب الجنس', 'Gender distribution'))}</section>
       </div>
       <div class="dgrid dg-b">
-        <section class="card"><h2>${esc(f.office ? L('الموظفون حسب القسم', 'Staff by department') : L('الموظفون حسب المكتب', 'Staff by office'))}</h2>${bars(f.office ? a.byDept.slice(0, 7) : byOffice, { title: L('توزيع الموظفين', 'Staff distribution') })}</section>
-        <section class="card"><h2>${esc(L('كلفة الرواتب حسب المنحة', 'Staff cost by grant'))}</h2>${bars(grantBars, { fmt: (v) => k(v), title: L('الكلفة الشهرية حسب المنحة', 'Monthly cost by grant') })}<p class="subtle" style="margin:10px 0 0">${esc(L('شهريا بالدولار، من نسب توزيع الوظائف على المنح.', 'Monthly, in USD, from position-to-grant allocation.'))} ${rule('ORG-004')}</p></section>
+        <section class="card"><h2>${esc(f.office ? L('الموظفون حسب القسم', 'Staff by department') : L('الموظفون حسب الفرع', 'Staff by branch'))}</h2>${bars(f.office ? a.byDept.slice(0, 7) : byOffice, { title: L('توزيع الموظفين', 'Staff distribution') })}</section>
+        <section class="card"><h2>${esc(L('كلفة الرواتب حسب مركز التكلفة', 'Staff cost by cost centre'))}</h2>${bars(grantBars, { fmt: (v) => k(v), title: L('الكلفة الشهرية حسب مركز التكلفة', 'Monthly cost by cost centre') })}<p class="subtle" style="margin:10px 0 0">${esc(L('شهريا بالجنيه المصري (رواتب دبي محولة بسعر صرف توضيحي)، من نسب توزيع الوظائف على مراكز التكلفة.', 'Monthly, in EGP (Dubai salaries converted at an illustrative rate), from position-to-cost-centre allocation.'))} ${rule('ORG-004')}</p></section>
         <section class="card"><h2>${esc(L('تطور عدد الموظفين', 'Headcount trend'))} <span class="count">${esc(period)}</span></h2>${lineChart(a.trend, L('تطور عدد الموظفين', 'Headcount trend'))}</section>
       </div>
       ${EXT.cdDash.map((fn) => fn()).join('')}`;
@@ -1071,7 +1084,7 @@
     }
     if (a.type === 'NEW_POSITION') {
       const g = grant(d.grant);
-      out.info.push(R('RC-002', `ممولة من ${g.id} · ${T(g)} حتى ${fmtD(g.end)}`, `Funded by ${g.id} · ${T(g)} until ${fmtD(g.end)}`));
+      out.info.push(R('RC-002', `على مركز التكلفة ${g.id} · ${T(g)} حتى ${fmtD(g.end)}`, `Charged to ${g.id} · ${T(g)} until ${fmtD(g.end)}`));
     }
     return out;
   }
@@ -1081,11 +1094,11 @@
     const e = a.subject ? empById.get(a.subject) : null;
     if (e) f.push([L('الموظف', 'Employee'), `${T(e.name)} · ${T(e.position)}`]);
     if (a.type === 'HIRE') { const v = D.vacancies.find((x) => x.id === d.vacancy); f.push([L('الوظيفة', 'Position'), `${v ? T(v) : d.vacancy} (${d.vacancy})`], [L('الترتيب والنتيجة', 'Rank & score'), `#${d.rank} · ${d.score}`], [L('الراتب المقترح', 'Proposed salary'), money(d.salary)], [L('تاريخ البدء', 'Start date'), fmtD(d.start)]); }
-    if (a.type === 'SALARY_INCREASE') f.push([L('الزيادة', 'Increase'), `${d.percent}%`], [L('الراتب', 'Salary'), `${money(d.from)} → ${money(d.from * (1 + d.percent / 100))}`]);
+    if (a.type === 'SALARY_INCREASE') f.push([L('الزيادة', 'Increase'), `${d.percent}%`], [L('الراتب', 'Salary'), `${money(d.from, e.currency)} → ${money(d.from * (1 + d.percent / 100), e.currency)}`]);
     if (a.type === 'UNPAID_LEAVE') f.push([L('المدة', 'Duration'), L(`${d.days} يوماً`, `${d.days} days`)], [L('من', 'From'), fmtD(d.from)]);
-    if (a.type === 'NEW_POSITION') f.push([L('الدرجة', 'Grade'), `G${d.grade}`], [L('المكتب', 'Office'), officeName(d.office)], [L('المدة', 'Duration'), L(`${d.months} شهراً`, `${d.months} months`)], [L('الكلفة الشهرية', 'Monthly cost'), money(d.budget)]);
+    if (a.type === 'NEW_POSITION') f.push([L('الدرجة', 'Grade'), `G${d.grade}`], [L('الفرع', 'Branch'), officeName(d.office)], [L('المدة', 'Duration'), L(`${d.months} شهراً`, `${d.months} months`)], [L('الكلفة الشهرية', 'Monthly cost'), money(d.budget)]);
     if (a.type === 'WARNING') f.push([L('المستوى', 'Level'), L('إنذار كتابي أول', 'First written warning')], [L('السبب', 'Reason'), T(d.reason)]);
-    if (a.type === 'ACTING') f.push([L('الوظيفة', 'Position'), T(d.position)], [L('المدة', 'Duration'), L(`${d.months} أشهر`, `${d.months} months`)], [L('البدل', 'Allowance'), money((e.baseSalary * d.allowance) / 100)]);
+    if (a.type === 'ACTING') f.push([L('الوظيفة', 'Position'), T(d.position)], [L('المدة', 'Duration'), L(`${d.months} أشهر`, `${d.months} months`)], [L('البدل', 'Allowance'), money((e.baseSalary * d.allowance) / 100, e.currency)]);
     const rq = empById.get(a.requester); if (rq) f.push([L('مقدّم الطلب', 'Requested by'), T(rq.name.short)]);
     return f;
   }
@@ -1147,14 +1160,14 @@
     const canSeePay = S.role === 'HR' || S.role === 'CD';
     const body = `
       <dl class="kv"><dt>${esc(L('الرقم الوظيفي', 'Staff no.'))}</dt><dd class="num">${esc(e.staffNo)}</dd><dt>${esc(L('الوظيفة', 'Position'))}</dt><dd>${esc(T(e.position))} · G${e.grade}</dd>
-        <dt>${esc(L('القسم', 'Department'))}</dt><dd>${esc(T(e.deptName))}</dd><dt>${esc(L('المكتب', 'Office'))}</dt><dd>${esc(officeName(e.office))}</dd>
+        <dt>${esc(L('القسم', 'Department'))}</dt><dd>${esc(T(e.deptName))}</dd><dt>${esc(L('الفرع', 'Branch'))}</dt><dd>${esc(officeName(e.office))}</dd>
         <dt>${esc(L('الفئة', 'Category'))}</dt><dd>${esc(T(CAT[e.category]))}</dd><dt>${esc(L('المدير المباشر', 'Line manager'))}</dt><dd>${mgr ? esc(T(mgr.name.short)) : '—'}</dd>
         <dt>${esc(L('التعيين', 'Hired'))}</dt><dd>${esc(fmtD(e.hireDate))} (${esc(L(`${fmtN(serviceDays(e) / 365, 1)} سنة`, `${fmtN(serviceDays(e) / 365, 1)} yrs`))})</dd><dt>${esc(L('نهاية العقد', 'Contract end'))}</dt><dd>${esc(fmtD(e.contractEnd))}</dd>
         ${e.inProbation ? `<dt>${esc(L('نهاية التجربة', 'Probation end'))}</dt><dd>${esc(fmtD(e.probationEnd))}</dd>` : ''}</dl>
-      <div><p class="section-title">${esc(L('التمويل', 'Funding'))} ${rule('ORG-004')}</p>${e.alloc.map((a) => `<div class="list-item"><div class="grow"><div class="t">${esc(a.grant)} · ${esc(T(grant(a.grant)))}</div>${meter(a.pct)}</div><span class="num">${a.pct}%</span></div>`).join('')}</div>
+      <div><p class="section-title">${esc(L('مركز التكلفة', 'Cost centre'))} ${rule('ORG-004')}</p>${e.alloc.map((a) => `<div class="list-item"><div class="grow"><div class="t">${esc(a.grant)} · ${esc(T(grant(a.grant)))}</div>${meter(a.pct)}</div><span class="num">${a.pct}%</span></div>`).join('')}</div>
       ${e.category === 'REGULAR' ? `<div><p class="section-title">${esc(L('أرصدة الإجازات', 'Leave balances'))}</p><dl class="kv"><dt>${esc(T(LEAVE.ANNUAL))}</dt><dd class="num">${fmtN(b.annual.available, 2)}</dd><dt>${esc(L('مرضية (كامل)', 'Sick (full pay)'))}</dt><dd class="num">${fmtN(b.sick.full)}</dd><dt>${esc(L('علامات التأخير هذا الشهر', 'Late marks this month'))}</dt><dd class="num">${e.lateMarks}</dd></dl></div>` : ''}
       <div><p class="section-title">${esc(L('الامتثال', 'Compliance'))}</p><div class="btn-row">${e.screening === 'CLEARED' ? badge('b-ok', L('الفحص: مُجاز', 'Screening: cleared'), 'check') : badge('b-bad', L('الفحص: مستحق', 'Screening: due'), 'warn')}${e.ackMissing.length ? badge('b-warn', L(`${e.ackMissing.length} إقرار ناقص`, `${e.ackMissing.length} ack pending`)) : badge('b-ok', L('الإقرارات مكتملة', 'Acknowledgements complete'), 'check')}${badge('b-neutral', L(`التدريبات ${e.trainingsDone.length}/${D.TRAININGS.length}`, `Trainings ${e.trainingsDone.length}/${D.TRAININGS.length}`))}</div></div>
-      <div><p class="section-title">${esc(L('التعويضات', 'Compensation'))} ${rule('RD-003')}</p>${canSeePay ? `<dl class="kv"><dt>${esc(L('الراتب الأساسي', 'Base salary'))}</dt><dd class="num">${money(e.baseSalary)}</dd><dt>${esc(L('آخر تقييم', 'Last rating'))}</dt><dd>${esc(T(RATING[e.rating]))}</dd></dl><p class="subtle" style="margin:6px 0 0">${icon('lock', 12)} ${esc(L('حقل محمي: يظهر لمدير الموارد البشرية والمالية والمدير القُطري فقط.', 'Protected field: visible to HR manager, Finance and Country Director only.'))}</p>` : `<span class="locked">${icon('lock', 14)}${esc(L('محمي', 'Protected'))}</span>`}</div>`;
+      <div><p class="section-title">${esc(L('التعويضات', 'Compensation'))} ${rule('RD-003')}</p>${canSeePay ? `<dl class="kv"><dt>${esc(L('الراتب الأساسي', 'Base salary'))}</dt><dd class="num">${money(e.baseSalary, e.currency)}</dd><dt>${esc(L('آخر تقييم', 'Last rating'))}</dt><dd>${esc(T(RATING[e.rating]))}</dd></dl><p class="subtle" style="margin:6px 0 0">${icon('lock', 12)} ${esc(L('حقل محمي: يظهر لمدير الموارد البشرية والمالية والمدير العام فقط.', 'Protected field: visible to HR manager, Finance and General Manager only.'))}</p>` : `<span class="locked">${icon('lock', 14)}${esc(L('محمي', 'Protected'))}</span>`}</div>`;
     const footer = S.role === 'HR' ? `<button class="btn" data-act="cos-new" data-id="${e.id}">${esc(L('تغيير حالة', 'Change of status'))}</button><button class="btn" data-act="toast" data-msg="${esc(L('أُنشئت شهادة الخبرة من القالب.', 'Employment certificate generated from template.'))}">${esc(L('شهادة خبرة', 'Employment certificate'))}</button>` : '';
     return drawer(T(e.name), body + EXT.empSections.map((fn) => fn(e)).join(''), EXT.empFooter.map((fn) => fn(e)).join('') + footer, avatar(e));
   }
@@ -1197,11 +1210,11 @@
     const card = acard(`${T(APTYPE[a.type])}: ${apSubject(a)}`, apFacts(a).slice(0, 5),
       a.status !== 'PENDING' ? badge(a.status === 'APPROVED' ? 'b-ok' : 'b-bad', a.status === 'APPROVED' ? L('معتمد', 'Approved') : L('مرفوض', 'Rejected')) : `<button class="btn primary sm" data-act="ap-decide" data-id="${a.id}" data-v="APPROVED" data-via="${S.channel === 'outlook' ? 'Outlook' : 'Teams'}">${esc(L('اعتماد', 'Approve'))}</button><button class="btn sm" data-act="ap-decide" data-id="${a.id}" data-v="REJECTED" data-via="${S.channel === 'outlook' ? 'Outlook' : 'Teams'}">${esc(L('رفض', 'Reject'))}</button><button class="btn subtle sm" data-act="ap-open" data-id="${a.id}">${esc(L('التفاصيل', 'Details'))}</button>`,
       c.errors.length ? `<span class="badge b-bad">${icon('warn', 12)}${esc(L('مخالفة للسياسة', 'Policy exception'))}</span> ${c.errors.map((x) => rule(x.rule)).join(' ')}` : `<span class="badge b-ok">${icon('check', 12)}${esc(L('مطابق للسياسة', 'Policy compliant'))}</span>`);
-    return modal(L('بطاقة الموافقة كما تصل للمدير القُطري', 'Approval card as delivered to the Country Director'), channelPreview('ap', rq ? T(rq.name.short) : 'HR', T(cd.name.short), `${T(APTYPE[a.type])}: ${apSubject(a)}`, card));
+    return modal(L('بطاقة الموافقة كما تصل للمدير العام', 'Approval card as delivered to the General Manager'), channelPreview('ap', rq ? T(rq.name.short) : 'HR', T(cd.name.short), `${T(APTYPE[a.type])}: ${apSubject(a)}`, card));
   }
   function ackModal(code) {
     const p = D.POLICIES.find((x) => x.code === code);
-    return modal(T(p), `<div class="msg info">${icon('doc', 16)}<div>${esc(L('في النسخة الفعلية تُعرض هنا وثيقة السياسة التي رفعتها مؤسستك.', 'In production, your organization\'s uploaded policy document is displayed here.'))}</div></div>
+    return modal(T(p), `<div class="msg info">${icon('doc', 16)}<div>${esc(L('في النسخة الفعلية تُعرض هنا وثيقة السياسة التي رفعتها شركتك.', 'In production, your company\'s uploaded policy document is displayed here.'))}</div></div>
       <div class="card" style="box-shadow:none;border:1px solid var(--border);min-height:120px;display:grid;place-items:center;color:var(--text-3)">${icon('doc', 32)}<span>${esc(`${T(p)} · v${p.v}.pdf`)}</span></div>
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="ack-check" style="accent-color:var(--primary)"> ${esc(L('قرأت السياسة وفهمتها وألتزم بها.', 'I have read, understood and will comply with this policy.'))}</label>`,
       `<button class="btn" data-act="close-overlay">${esc(L('لاحقاً', 'Later'))}</button><button class="btn primary" data-act="ack-confirm" data-id="${code}">${esc(L('تأكيد الإقرار', 'Confirm acknowledgement'))}</button>`);
@@ -1215,7 +1228,7 @@
     const c = S.confirm; if (!c) return '';
     let title = ''; let text = ''; let ok = ''; let danger = false; let reason = false;
     if (c.kind === 'hr-reject') { const r = D.leaveRequests.find((x) => x.id === c.id); const e = empById.get(r.empId); title = L('رفض طلب الإجازة؟', 'Reject leave request?'); text = L(`سيُبلَّغ ${T(e.name.short)} بالرفض عبر Teams مع السبب.`, `${T(e.name.short)} will be notified in Teams with the reason.`); ok = L('رفض الطلب', 'Reject request'); danger = true; reason = true; }
-    if (c.kind === 'hr-bulk') { title = L(`اعتماد ${c.ids.length} طلبات؟`, `Approve ${c.ids.length} requests?`); text = L('ستُحدَّث الأرصدة وكشوف الدوام ويُبلَّغ الموظفون. الإجازات بدون راتب تُحال للمدير القُطري.', 'Balances and timesheets will be updated and employees notified. Leave without pay is forwarded to the Country Director.'); ok = L('اعتماد الكل', 'Approve all'); }
+    if (c.kind === 'hr-bulk') { title = L(`اعتماد ${c.ids.length} طلبات؟`, `Approve ${c.ids.length} requests?`); text = L('ستُحدَّث الأرصدة وكشوف الدوام ويُبلَّغ الموظفون. الإجازات بدون راتب تُحال للمدير العام.', 'Balances and timesheets will be updated and employees notified. Leave without pay is forwarded to the General Manager.'); ok = L('اعتماد الكل', 'Approve all'); }
     if (c.kind === 'ap-reject') { const a = D.approvals.find((x) => x.id === c.id); title = L('رفض الطلب؟', 'Reject this request?'); text = L(`${T(APTYPE[a.type])}: ${apSubject(a)}. سيُبلَّغ مقدّم الطلب.`, `${T(APTYPE[a.type])}: ${apSubject(a)}. The requester will be notified.`); ok = L('رفض', 'Reject'); danger = true; reason = true; }
     return `<div class="scrim" data-act="close-overlay" data-self="1"><div class="modal-wrap" data-act="close-overlay" data-self="1"><div class="modal sm" role="alertdialog" aria-modal="true" aria-label="${esc(title)}">
       <header><span style="color:${danger ? 'var(--danger-text)' : 'var(--primary)'};display:grid">${icon(danger ? 'warn' : 'info')}</span><h2>${esc(title)}</h2></header>
@@ -1225,7 +1238,7 @@
   function helpModal() {
     const row = (k, ar, en) => `<div class="list-item"><span class="kbd">${k}</span><div class="grow">${esc(L(ar, en))}</div></div>`;
     return modal(L('المساعدة', 'Help'), `
-      <div class="msg info">${icon('info', 16)}<div>${esc(L('هذه نسخة عرض ببيانات وهمية. بدّل مساحة العمل من الزر بجانب اسم النظام لترى النظام كموظف أو كقسم موارد بشرية أو كمدير قُطري.', 'This is a demo with fictitious data. Use the workspace switcher next to the product name to view the system as an employee, HR or the Country Director.'))}</div></div>
+      <div class="msg info">${icon('info', 16)}<div>${esc(L('هذه نسخة عرض ببيانات وهمية. بدّل مساحة العمل من الزر بجانب اسم النظام لترى النظام كموظف أو كقسم موارد بشرية أو كمدير عام.', 'This is a demo with fictitious data. Use the workspace switcher next to the product name to view the system as an employee, HR or the General Manager.'))}</div></div>
       <div><p class="section-title">${esc(L('اختصارات لوحة المفاتيح', 'Keyboard shortcuts'))}</p><div class="list">${row('/', 'البحث عن موظف', 'Search employees')}${row('Esc', 'إغلاق النافذة أو القائمة', 'Close dialog or menu')}${row('Tab', 'التنقل بين العناصر', 'Move between controls')}</div></div>
       <div><p class="section-title">${esc(L('معرّفات القواعد', 'Rule IDs'))}</p><p class="muted" style="margin:0">${esc(L('الرموز مثل', 'Codes such as'))} ${rule('LV-062')} ${esc(L('تشير إلى قاعدة في المرجع الوظيفي للنظام (docs/ar/system-reference.md)، فيمكن تتبّع كل قرار يتخذه النظام إلى سياسة محددة.', 'refer to a rule in the functional reference (docs/en/system-reference.md), so every system decision traces back to a specific policy.'))}</p></div>`,
       `<button class="btn primary" data-act="close-overlay">${esc(L('تم', 'Done'))}</button>`);
@@ -1320,7 +1333,7 @@
       const apId = `AP-${600 + D.approvals.length}`;
       D.approvals.unshift({ id: apId, type: 'UNPAID_LEAVE', requester: D.personas.HR, subject: e.id, created: D.todayISO, status: 'PENDING', leaveId: r.id, data: { days: r.days, from: r.from, usedThisYear: Math.max(0, balances(e).unpaid.used - r.days), service: serviceMonths(e) }, rules: ['LV-063'] });
       addActivity('CD', 'teams', `إجازة بدون راتب لـ ${e.name.ar} بانتظار اعتمادك`, `Leave without pay for ${e.name.en} awaiting your approval`, 'approvals');
-      say(L('أُحيل الطلب إلى المدير القُطري حسب السياسة.', 'Forwarded to the Country Director per policy.'), 'ok');
+      say(L('أُحيل الطلب إلى المدير العام حسب السياسة.', 'Forwarded to the General Manager per policy.'), 'ok');
     } else { r.status = 'APPROVED'; say(L('تم الاعتماد وتحديث الرصيد وكشف الدوام.', 'Approved; balance and timesheet updated.'), 'ok'); }
     if (e.id === me().id) addActivity('EMPLOYEE', 'teams', `تحديث على طلبك ${id}: ${LSTATUS[r.status].ar}`, `Update on ${id}: ${LSTATUS[r.status].en}`, 'leave');
     render();
@@ -1331,7 +1344,7 @@
     audit(`${status === 'APPROVED' ? 'اعتماد' : 'رفض'} ${APTYPE[a.type].ar}: ${a.id}`, `${status === 'APPROVED' ? 'Approved' : 'Rejected'} ${APTYPE[a.type].en}: ${a.id}`);
     EXT.onDecide.forEach((fn) => fn(a, status));
     if (a.leaveId) { const r = D.leaveRequests.find((x) => x.id === a.leaveId); if (r) r.status = status === 'APPROVED' ? 'APPROVED' : 'REJECTED'; }
-    addActivity('HR', 'outlook', `${status === 'APPROVED' ? 'اعتمد' : 'رفض'} المدير القُطري ${APTYPE[a.type].ar}: ${a.id}`, `Country Director ${status === 'APPROVED' ? 'approved' : 'rejected'} ${APTYPE[a.type].en}: ${a.id}`, a.type === 'HIRE' ? 'recruitment' : 'dashboard');
+    addActivity('HR', 'outlook', `${status === 'APPROVED' ? 'اعتمد' : 'رفض'} المدير العام ${APTYPE[a.type].ar}: ${a.id}`, `General Manager ${status === 'APPROVED' ? 'approved' : 'rejected'} ${APTYPE[a.type].en}: ${a.id}`, a.type === 'HIRE' ? 'recruitment' : 'dashboard');
     S.overlay = null; render();
     toast(status === 'APPROVED' ? L(`تم الاعتماد${via ? ` من ${via}` : ''}، وأُبلغ مقدّم الطلب.`, `Approved${via ? ` from ${via}` : ''}; requester notified.`) : L('تم الرفض وأُبلغ مقدّم الطلب.', 'Rejected; requester notified.'), status === 'APPROVED' ? 'ok' : 'bad');
   }
@@ -1380,10 +1393,11 @@
       case 'advance': { const c = D.candidates.find((x) => x.id === id); if (gate(c)) return; const i = D.STAGES.indexOf(c.stage); c.stage = D.STAGES[i + 1]; if (c.stage === 'INTERVIEW' && c.score == null) c.score = 70 + (c.years % 20); if (c.stage === 'SCREENING' && c.screening === 'NOT_STARTED') c.screening = 'PENDING'; if (c.stage === 'EVALUATION' && !c.evals.submitted) c.evals.submitted = 1; render(); break; }
       case 'screen': { const c = D.candidates.find((x) => x.id === id); c.screening = 'CLEARED'; c.mds = true; if (c.refs < 2) c.refs = 2; render(); toast(L('سُجّل اجتياز فحص الامتثال (النتيجة التفصيلية مقيّدة).', 'Screening recorded as cleared (details restricted).'), 'ok'); break; }
       case 'remind-panel': { const c = D.candidates.find((x) => x.id === id); c.evals.submitted = c.evals.required; render(); toast(L('أُرسل التذكير، وقدّم أعضاء اللجنة نماذجهم (محاكاة).', 'Reminder sent; panel submitted their forms (simulated).'), 'ok'); break; }
-      case 'to-cd': { const c = D.candidates.find((x) => x.id === id); c.sentToCd = true; const vac = D.vacancies.find((x) => x.id === c.vacancy); D.approvals.unshift({ id: `AP-${600 + D.approvals.length}`, type: 'HIRE', requester: D.personas.HR, created: D.todayISO, status: 'PENDING', data: { candidate: c.name, vacancy: c.vacancy, rank: 1, score: c.score, panel: 3, evals: `${c.evals.submitted}/${c.evals.required}`, refs: `${c.refs}/2`, screening: c.screening, salary: Math.round(({ 5: 1050, 6: 1300, 7: 1650 }[vac.grade] || 1000)), start: iso(addDays(TODAY, 14)) }, rules: ['RC-013'] }); addActivity('CD', 'teams', `اعتماد تعيين: ${c.name.ar}`, `Hiring approval: ${c.name.en}`, 'approvals'); render(); toast(L('أُرسل للمدير القُطري كبطاقة في Teams وOutlook.', 'Sent to the Country Director as a Teams and Outlook card.'), 'ok'); break; }
+      case 'to-cd': { const c = D.candidates.find((x) => x.id === id); c.sentToCd = true; const vac = D.vacancies.find((x) => x.id === c.vacancy); D.approvals.unshift({ id: `AP-${600 + D.approvals.length}`, type: 'HIRE', requester: D.personas.HR, created: D.todayISO, status: 'PENDING', data: { candidate: c.name, vacancy: c.vacancy, rank: 1, score: c.score, panel: 3, evals: `${c.evals.submitted}/${c.evals.required}`, refs: `${c.refs}/2`, screening: c.screening, salary: Math.round(({ 5: 1050, 6: 1300, 7: 1650 }[vac.grade] || 1000)), start: iso(addDays(TODAY, 14)) }, rules: ['RC-013'] }); addActivity('CD', 'teams', `اعتماد تعيين: ${c.name.ar}`, `Hiring approval: ${c.name.en}`, 'approvals'); render(); toast(L('أُرسل للمدير العام كبطاقة في Teams وOutlook.', 'Sent to the General Manager as a Teams and Outlook card.'), 'ok'); break; }
       case 'remind-acks': { const n = missingAck().length; addActivity('HR', 'teams', `أُرسلت تذكيرات إلى ${n} موظفاً`, `Reminders sent to ${n} employees`, 'compliance'); render(); toast(L(`أُرسل تذكير عبر Teams إلى ${n} موظفاً.`, `Teams reminder sent to ${n} employees.`), 'ok'); break; }
-      case 'export-policy': { try { const blob = new Blob([JSON.stringify(D.POLICY, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'policy-set.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); } catch (e) { toast('Export failed', 'bad'); } break; }
-      case 'reset-policy': D.POLICY = JSON.parse(JSON.stringify(DEFAULT_POLICY)); render(); toast(L('استُعيدت القيم الافتراضية.', 'Defaults restored.'), 'ok'); break;
+      case 'export-policy': { try { const blob = new Blob([JSON.stringify(D.POLICY_SETS, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'policy-set.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); } catch (e) { toast('Export failed', 'bad'); } break; }
+      case 'policy-set': S.policySet = t.dataset.id; render(); break;
+      case 'reset-policy': D.POLICY_SETS[S.policySet] = JSON.parse(JSON.stringify(DEFAULT_SETS[S.policySet])); D.POLICY = D.POLICY_SETS.EG; render(); toast(L('استُعيدت القيم الافتراضية.', 'Defaults restored.'), 'ok'); break;
       case 'apf': S.apFilter = v; render(); break;
       case 'ap-open': openOverlay({ type: 'ap', id }); break;
       case 'ap-decide': if (v === 'REJECTED') { S.confirm = { kind: 'ap-reject', id, via: t.dataset.via }; openOverlay({ type: 'confirm' }); } else apDecide(id, v, t.dataset.via); break;
@@ -1464,14 +1478,14 @@
     if (t.dataset.bind === 'type') { S.leaveDraft.type = t.value; render(); }
     if (t.dataset.dir && t.dataset.dir !== 'q') { S.dir[t.dataset.dir] = t.dataset.dir === 'per' ? Number(t.value) : t.value; S.dir.page = 1; refreshDir(); }
     if (t.dataset.param) { const p = PARAMS.find((x) => x.k === t.dataset.param); const val = p.type === 'number' ? Math.max(p.min, Math.min(p.max, Number(t.value))) : t.value; setP(p.k, val); audit(`تعديل إعداد ${p.k} إلى ${val}`, `Setting ${p.k} changed to ${val}`); render(); toast(L('حُفظ الإعداد وطُبّق فوراً.', 'Setting saved and applied immediately.'), 'ok'); }
-    if (t.dataset.wday) { const days = DAYNAMES.filter((dn) => document.querySelector(`[data-wday="${dn}"]`).checked); if (!days.length) { t.checked = true; return; } D.POLICY.workWeek.days = days; render(); toast(L('حُدّث أسبوع العمل.', 'Work week updated.'), 'ok'); }
+    if (t.dataset.wday) { const days = DAYNAMES.filter((dn) => document.querySelector(`[data-wday="${dn}"]`).checked); if (!days.length) { t.checked = true; return; } PSET().workWeek.days = days; render(); toast(L('حُدّث أسبوع العمل.', 'Work week updated.'), 'ok'); }
   });
   document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape') { if (menuState) { closeMenu(); return; } if (S.overlay) { S.confirm = null; closeOverlay(); return; } if (S.navOpen) { S.navOpen = false; render(); } }
     if (ev.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { ev.preventDefault(); const g = document.getElementById('gsearch'); if (g) g.focus(); }
     if (ev.key === 'Enter' && ev.target.dataset.act === 'global-search') {
       const q = ev.target.value.trim(); if (!q) return;
-      if (S.role === 'EMPLOYEE') { toast(L('البحث في الدليل متاح لفريق الموارد البشرية والمدير القُطري.', 'Directory search is available to HR and the Country Director.')); return; }
+      if (S.role === 'EMPLOYEE') { toast(L('البحث في الدليل متاح لفريق الموارد البشرية والمدير العام.', 'Directory search is available to HR and the General Manager.')); return; }
       if (S.role !== 'HR') { const hit = dirFilteredFor(q)[0]; if (hit) openOverlay({ type: 'emp', id: hit.id }); else toast(L('لا نتائج', 'No results'), 'bad'); return; }
       S.dir.q = q; S.dir.page = 1; setView('employees');
     }
@@ -1552,7 +1566,7 @@
   EXT.state.audit = EXT.saved.audit || [];
   const HRMO = {
     S, D, NAV, VIEWS, ROLES, EXT, P, CAT, LEAVE, LSTATUS, RATING, APTYPE, STAGE, DAYNAMES, DAYLABEL, PARAMS, DEFAULT_POLICY,
-    L, T, esc, icon, fmtN, fmtD, fmtDs, money, parse, iso, addDays, daysBetween, TODAY, initials,
+    L, T, esc, icon, fmtN, fmtD, fmtDs, money, curLabel, toBase, policyFor, countryOf, holidaysFor, parse, iso, addDays, daysBetween, TODAY, initials,
     badge, rule, avatar, who, tile, msgs, bars, meter, toast, addActivity, emptyState, reqTable, statusBadge, R,
     empById, me, persona, active, balances, validateLeave, serviceDays, serviceMonths, officeName, grant, isWorkDay, workingDays, businessDaysUntil,
     render, save, openOverlay, closeOverlay, setView, drawer, modal, acard, channelPreview, managerDecide, apSubject, roleLabel, flagList,

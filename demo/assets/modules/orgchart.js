@@ -120,10 +120,10 @@
         id: `E${String(Math.max(...ids) + 1).padStart(4, '0')}`, staffNo: `HRMO-${next}`,
         name: { ar: name, en: name, short: { ar: short, en: short } }, gender: v('oca-gender') || 'F',
         dept: mgr.dept, deptName: mgr.deptName, position: { ar: title, en: title }, grade, office, category: 'REGULAR',
-        hireDate: today, contractEnd: iso(new Date(t0.getFullYear() + 1, t0.getMonth(), t0.getDate())), probationEnd: iso(new Date(t0.getFullYear(), t0.getMonth() + D.POLICY.probationMonths, t0.getDate())), inProbation: true,
-        baseSalary: 0, currency: 'USD', alloc: mgr.alloc || [], leave: { annualAccrued: 0, annualUsed: 0, sickUsed: 0, compDays: 0, unpaidUsed: 0 },
+        hireDate: today, contractEnd: iso(new Date(t0.getFullYear() + 1, t0.getMonth(), t0.getDate())), country: H.countryOf({ office }), probationEnd: iso(new Date(t0.getFullYear(), t0.getMonth() + H.policyFor({ office }).probationMonths, t0.getDate())), inProbation: true,
+        baseSalary: 0, currency: H.policyFor({ office }).currency, alloc: mgr.alloc || [], leave: { annualAccrued: 0, annualUsed: 0, sickUsed: 0, compDays: 0, unpaidUsed: 0 },
         lateMarks: 0, ackMissing: D.POLICIES.map((p) => p.code), trainingsDone: [], screening: 'DUE', warnings: 0, rating: 'SATISFACTORY',
-        phone: '', email: '', managerId: mgr.id, staffType: 'NATL', disability: false
+        phone: '', email: '', managerId: mgr.id, staffType: H.countryOf({ office }) === 'AE' ? 'INTL' : 'NATL', disability: false
       };
       D.employees.push(e); empById.set(e.id, e); ADDED.push(e);
       audit(`إضافة موظف ${e.staffNo} تحت ${mgr.name.ar}`, `Employee ${e.staffNo} added under ${mgr.name.en}`);
@@ -153,7 +153,7 @@
         <div class="field full"><label for="oca-name">${esc(L('الاسم الكامل', 'Full name'))}</label><input id="oca-name" class="input" autocomplete="off"></div>
         <div class="field full"><label for="oca-title">${esc(L('المسمى الوظيفي', 'Job title'))}</label><input id="oca-title" class="input" autocomplete="off"></div>
         <div class="field full"><label for="oca-mgr">${esc(L('المدير المباشر', 'Line manager'))}</label><select id="oca-mgr" class="select"><optgroup label="${esc(L('مديرون ومشرفون', 'Managers and supervisors'))}">${managers.map(opt).join('')}</optgroup><optgroup label="${esc(L('بقية الموظفين', 'Other staff'))}">${others.map(opt).join('')}</optgroup></select></div>
-        <div class="field"><label for="oca-office">${esc(L('المكتب', 'Office'))}</label><select id="oca-office" class="select"><option value="">${esc(L('مكتب المدير نفسه', 'Same as the manager'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}">${esc(T(o))}</option>`).join('')}</select></div>
+        <div class="field"><label for="oca-office">${esc(L('الفرع', 'Branch'))}</label><select id="oca-office" class="select"><option value="">${esc(L('مكتب المدير نفسه', 'Same as the manager'))}</option>${D.OFFICES.map((o) => `<option value="${o.id}">${esc(T(o))}</option>`).join('')}</select></div>
         <div class="field"><label for="oca-gender">${esc(L('الجنس', 'Gender'))}</label><select id="oca-gender" class="select"><option value="F">${esc(L('أنثى', 'Female'))}</option><option value="M">${esc(L('ذكر', 'Male'))}</option></select></div>
         <div class="field full"><span class="flabel">${esc(L('الرقم الوظيفي', 'Staff number'))}</span><div class="oc-nextno"><bdi>HRMO-${next}</bdi> <span class="subtle">${esc(L('يولد تلقائيا', 'Generated automatically'))}</span></div></div>
         <div class="full msg info">${icon('info', 16)}<div>${esc(L('القسم يؤخذ من المدير المباشر. يظهر الموظف في الهيكل فور الحفظ، وتستكمل بقية بياناته من سجل الموظفين.', 'The department is taken from the line manager. The employee appears in the chart as soon as you save; the rest of the record is completed in the employee register.'))}</div></div>

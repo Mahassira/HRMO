@@ -26,12 +26,12 @@
   });
   const OBJ = store('objectives', () => {
     const r = H.rng(29); const out = [];
-    const mine = [['رفع تغطية التطعيم في المنطقة المخدومة إلى 90%', 'Raise vaccination coverage in the catchment area to 90%'], ['تدريب 20 عامل صحة مجتمعية على الإحالة', 'Train 20 community health workers on referrals'], ['تسليم التقارير الشهرية للمانح قبل اليوم الخامس', 'Submit monthly donor reports by the 5th'], ['تقليل نفاد الأدوية الأساسية إلى صفر', 'Bring essential-medicine stock-outs to zero']];
+    const mine = [['رفع نسبة تسليم الشحنات في موعدها إلى 95%', 'Raise on-time shipment delivery to 95%'], ['تدريب 10 منسقين على نظام الحجز الجديد', 'Train 10 coordinators on the new booking system'], ['إصدار بوالص الشحن خلال 24 ساعة من الإبحار', 'Issue bills of lading within 24 hours of sailing'], ['خفض غرامات الأرضيات والتأخير إلى صفر', 'Bring demurrage and detention charges to zero']];
     mine.forEach((m, i) => out.push({ id: `OBJ-${4001 + i}`, empId: D.personas.EMPLOYEE, ar: m[0], en: m[1], due: iso(addDays(TODAY, 30 + i * 20)), progress: [70, 45, 90, 30][i], checkins: [{ date: iso(addDays(TODAY, -40)), progress: [50, 20, 80, 10][i] }] }));
-    H.team().filter((e) => e.id !== D.personas.EMPLOYEE).slice(0, 10).forEach((e) => { for (let k = 0; k < 2; k++) out.push({ id: `OBJ-${4001 + out.length}`, empId: e.id, ar: ['تحسين جودة الخدمة المقدمة', 'الالتزام بمعايير الحماية'][k], en: ['Improve service quality scores', 'Full adherence to safeguarding standards'][k], due: iso(addDays(TODAY, 60)), progress: Math.floor(r() * 100), checkins: [] }); });
+    H.team().filter((e) => e.id !== D.personas.EMPLOYEE).slice(0, 10).forEach((e) => { for (let k = 0; k < 2; k++) out.push({ id: `OBJ-${4001 + out.length}`, empId: e.id, ar: ['تحسين رضا العملاء عن الخدمة', 'الالتزام بمعايير السلامة والامتثال الجمركي'][k], en: ['Improve customer satisfaction scores', 'Full adherence to safety and customs compliance standards'][k], due: iso(addDays(TODAY, 60)), progress: Math.floor(r() * 100), checkins: [] }); });
     return out;
   });
-  const PIPS = store('pips', () => { const t = H.team().filter((e) => e.id !== D.personas.EMPLOYEE); return [{ id: 'PIP-5001', empId: t[8].id, start: iso(addDays(TODAY, -20)), end: iso(addDays(TODAY, 8)), goals: { ar: 'الالتزام بمواعيد التقارير وتحسين التوثيق', en: 'Meet report deadlines and improve documentation' }, status: 'ACTIVE' }, { id: 'PIP-5002', empId: D.employees[300].id, start: iso(addDays(TODAY, -35)), end: iso(addDays(TODAY, -7)), goals: { ar: 'تحسين الحضور والانضباط', en: 'Improve attendance and punctuality' }, status: 'ACTIVE' }]; });
+  const PIPS = store('pips', () => { const t = H.team().filter((e) => e.id !== D.personas.EMPLOYEE); return [{ id: 'PIP-5001', empId: t[8].id, start: iso(addDays(TODAY, -20)), end: iso(addDays(TODAY, 8)), goals: { ar: 'الالتزام بمواعيد التقارير وتحسين التوثيق', en: 'Meet report deadlines and improve documentation' }, status: 'ACTIVE' }, { id: 'PIP-5002', empId: D.employees[100].id, start: iso(addDays(TODAY, -35)), end: iso(addDays(TODAY, -7)), goals: { ar: 'تحسين الحضور والانضباط', en: 'Improve attendance and punctuality' }, status: 'ACTIVE' }]; });
 
   // ---------- Shared renderers ----------
   const miniSteps = (stage) => `<div class="mini-steps">${STAGES.map((s, i) => `<span class="${i < stageIdx(stage) ? 'done' : i === stageIdx(stage) ? 'cur' : ''}">${esc(L(s[1], s[2]))}</span>`).join('')}</div>`;
@@ -100,15 +100,15 @@
   // =====================================================================
   // Learning & development
   // =====================================================================
-  const NEEDS = [['DATA', 'تحليل البيانات وExcel', 'Data analysis & Excel'], ['REPORT', 'كتابة التقارير للمانحين', 'Donor report writing'], ['LEAD', 'القيادة والإشراف', 'Leadership & supervision'], ['ENGLISH', 'اللغة الإنجليزية المهنية', 'Professional English'], ['FIRSTAID', 'الإسعافات الأولية', 'First aid'], ['MHPSS', 'الإسعاف النفسي الأولي', 'Psychological first aid'], ['PROC', 'المشتريات والامتثال', 'Procurement & compliance'], ['SAFE', 'الأمن الشخصي في الميدان', 'Personal field security']];
+  const NEEDS = [['DATA', 'تحليل البيانات وExcel', 'Data analysis & Excel'], ['REPORT', 'مستندات الشحن وشروط التجارة Incoterms', 'Shipping documents & Incoterms'], ['LEAD', 'القيادة والإشراف', 'Leadership & supervision'], ['ENGLISH', 'اللغة الإنجليزية المهنية', 'Professional English'], ['FIRSTAID', 'الإسعافات الأولية', 'First aid'], ['MHPSS', 'التعامل مع البضائع الخطرة IMDG', 'Dangerous goods handling (IMDG)'], ['PROC', 'المشتريات والامتثال', 'Procurement & compliance'], ['SAFE', 'السلامة في الساحات والأرصفة', 'Yard and quay safety']];
   const COURSES = store('courses', () => [
-    { id: 'CRS-01', code: 'PSEA', ar: 'الحماية من الاستغلال والانتهاك الجنسي', en: 'PSEA essentials', type: 'MANDATORY', mode: 'ELEARN', hours: 2, date: iso(addDays(TODAY, 3)), seats: 60, enrolled: 41 },
+    { id: 'CRS-01', code: 'HSE', ar: 'أساسيات السلامة والصحة المهنية', en: 'Occupational health & safety essentials', type: 'MANDATORY', mode: 'ELEARN', hours: 2, date: iso(addDays(TODAY, 3)), seats: 60, enrolled: 41 },
     { id: 'CRS-02', code: 'HARASS', ar: 'منع التحرش في بيئة العمل', en: 'Preventing workplace harassment', type: 'MANDATORY', mode: 'ELEARN', hours: 1.5, date: iso(addDays(TODAY, 3)), seats: 60, enrolled: 37 },
-    { id: 'CRS-03', code: 'SECURITY', ar: 'الأمن والسلامة الميدانية', en: 'Field safety & security', type: 'MANDATORY', mode: 'CLASS', hours: 8, date: iso(addDays(TODAY, 9)), seats: 25, enrolled: 22 },
-    { id: 'CRS-04', code: 'FRAUD', ar: 'التوعية بالاحتيال', en: 'Fraud awareness', type: 'MANDATORY', mode: 'ELEARN', hours: 1, date: iso(addDays(TODAY, 3)), seats: 80, enrolled: 19 },
-    { id: 'CRS-05', code: 'REPORT', ar: 'كتابة التقارير للمانحين', en: 'Donor report writing', type: 'INTERNAL', mode: 'CLASS', hours: 12, date: iso(addDays(TODAY, 16)), seats: 20, enrolled: 14 },
+    { id: 'CRS-03', code: 'ISPS', ar: 'التوعية بأمن الموانئ (ISPS)', en: 'Port security awareness (ISPS)', type: 'MANDATORY', mode: 'CLASS', hours: 8, date: iso(addDays(TODAY, 9)), seats: 25, enrolled: 22 },
+    { id: 'CRS-04', code: 'FRAUD', ar: 'مكافحة الرشوة والنزاهة الجمركية', en: 'Anti-bribery & customs integrity', type: 'MANDATORY', mode: 'ELEARN', hours: 1, date: iso(addDays(TODAY, 3)), seats: 80, enrolled: 19 },
+    { id: 'CRS-05', code: 'REPORT', ar: 'مستندات الشحن وشروط التجارة Incoterms', en: 'Shipping documents & Incoterms', type: 'INTERNAL', mode: 'CLASS', hours: 12, date: iso(addDays(TODAY, 16)), seats: 20, enrolled: 14 },
     { id: 'CRS-06', code: 'LEAD', ar: 'أساسيات الإشراف', en: 'Supervision essentials', type: 'INTERNAL', mode: 'CLASS', hours: 16, date: iso(addDays(TODAY, 24)), seats: 18, enrolled: 18 },
-    { id: 'CRS-07', code: 'MHPSS', ar: 'الإسعاف النفسي الأولي', en: 'Psychological first aid', type: 'INTERNAL', mode: 'CLASS', hours: 6, date: iso(addDays(TODAY, 12)), seats: 30, enrolled: 11 }
+    { id: 'CRS-07', code: 'MHPSS', ar: 'التعامل مع البضائع الخطرة IMDG', en: 'Dangerous goods handling (IMDG)', type: 'INTERNAL', mode: 'CLASS', hours: 6, date: iso(addDays(TODAY, 12)), seats: 30, enrolled: 11 }
   ]);
   const MYL = store('myLearning', () => ({ enrolled: [], tna: [], tnaSubmitted: false, extDaysUsed: 1 }));
   const TNA = store('tnaAgg', () => { const r = H.rng(41); const m = {}; NEEDS.forEach(([k]) => { m[k] = 20 + Math.floor(r() * 140); }); return m; });
